@@ -4,11 +4,10 @@
 
 import webpack from 'webpack';
 import TsconfigPathsPlugins from 'tsconfig-paths-webpack-plugin';
-import { dependencies as externals } from '../../package.json';
 import webpackPaths from './webpack.paths';
 
 const configuration: webpack.Configuration = {
-  externals: [...Object.keys(externals || {})],
+  externals: [],
 
   stats: 'errors-only',
 
