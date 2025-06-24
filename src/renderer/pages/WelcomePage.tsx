@@ -1,7 +1,12 @@
+import BackgroundBox from '../components/shared/BackgroundBox';
+
 export default function WelcomePage() {
   return (
-    <div>
-      <h1 className="text-xl">Hello</h1>
-    </div>
+    <BackgroundBox
+      src="/images/bg_sunset.jpg"
+      className="flex justify-center items-center w-full h-screen"
+    >
+      <h1>Welcome</h1>
+    </BackgroundBox>
   );
 }
