@@ -17,6 +17,8 @@
   src: url('/assets/fonts/Top Secret.ttf');
 }
 
+@import url('./animations.css');
+
 :root {
   --font-primary: 'Bar el Loro', sans-serif;
   --font-secondary: 'Reward', sans-serif;

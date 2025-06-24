@@ -16,7 +16,7 @@ export default function BackgroundBox({
       style={{
         backgroundImage: `url(${src})`,
       }}
-      className={`relative bg-cover bg-center ${className}`}
+      className={`relative bg-cover bg-center overflow-hidden ${className}`}
     >
       {children}
     </div>
