@@ -20,4 +20,5 @@ model rooms {
   admin     String
   users     String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
