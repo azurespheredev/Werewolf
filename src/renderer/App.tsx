@@ -1,13 +1,6 @@
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
+import AppRouter from './routes/AppRouter';
 import './App.css';
-import WelcomePage from './pages/WelcomePage';
 
 export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<WelcomePage />} />
-      </Routes>
-    </Router>
-  );
+  return <AppRouter />;
 }
