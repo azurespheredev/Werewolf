@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "users" ALTER COLUMN "groupId" DROP NOT NULL,
-ALTER COLUMN "groupId" SET DEFAULT 0;

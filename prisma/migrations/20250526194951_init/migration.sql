@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "calendar_tokens" ADD COLUMN     "expiresAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
