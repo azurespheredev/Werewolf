@@ -1,4 +1,4 @@
-import { RouteType } from '../lib/types';
+import { RouteType } from '../../lib/types';
 import WelcomePage from '../pages/WelcomePage';
 
 const routes: RouteType[] = [

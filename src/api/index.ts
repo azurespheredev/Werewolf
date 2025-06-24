@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api', api);
 
 app.get('/', (_, res) => {
-  res.send('The Werewolf Game server is healthy.').status(200);
+  res.send('🟢 The Werewolf Game server is healthy. 🟢').status(200);
 });
 
-app.listen(8000, () => console.log('Server is running on port 8000.'));
+app.listen(8000, () => console.info('Server is running on port 8000.'));
