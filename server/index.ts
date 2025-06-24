@@ -25,6 +25,4 @@ app.get('/', (_, res) => {
   res.send('The Werewolf Game server is healthy.').status(200);
 });
 
-app.listen(process.env.PORT, () =>
-  console.log(`Server is running on port ${process.env.PORT}`),
-);
+app.listen(8000, () => console.log('Server is running on port 8000.'));
