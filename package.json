@@ -98,7 +98,9 @@
   },
   "dependencies": {
     "@electron/notarize": "^3.0.0",
+    "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^6.6.0",
+    "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/postcss": "^4.1.10",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
@@ -112,6 +114,7 @@
     "prisma": "^6.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.0.4",
