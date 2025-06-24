@@ -1,0 +1,18 @@
+@keyframes anim-shake-to-left {
+  0% {
+    transform: rotateZ(10deg);
+  }
+
+  40% {
+    transform: rotateZ(-5deg);
+  }
+
+  100% {
+    transform: rotateZ(0);
+  }
+}
+
+.anim-shake-to-left {
+  transform-origin: 50% 200%;
+  animation: anim-shake-to-left 0.5s ease-in-out;
+}
