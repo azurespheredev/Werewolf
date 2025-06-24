@@ -38,10 +38,11 @@ const configuration: webpack.Configuration = {
 
   module: {
     rules: [
+      // CSS Modules for SCSS
       {
-        test: /\.s?(a|c)ss$/,
+        test: /\.module\.s[ac]ss$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          'style-loader',
           {
             loader: 'css-loader',
             options: {
@@ -50,14 +51,21 @@ const configuration: webpack.Configuration = {
               importLoaders: 1,
             },
           },
+          'postcss-loader',
           'sass-loader',
         ],
-        include: /\.module\.s?(c|a)ss$/,
       },
+      // Global SCSS (not modules)
       {
-        test: /\.s?(a|c)ss$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
-        exclude: /\.module\.s?(c|a)ss$/,
+        test: /\.s[ac]ss$/,
+        exclude: /\.module\.s[ac]ss$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader', 'sass-loader'],
+      },
+      // Global plain CSS (for Tailwind, etc.)
+      {
+        test: /\.css$/,
+        exclude: /\.module\.css$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
       // Fonts
       {

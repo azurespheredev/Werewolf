@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Bar el Loro';
+  src: url('/assets/fonts/Bar el Loro.otf');
+}
+
+@font-face {
+  font-family: 'Reward';
+  src: url('/assets/fonts/Reward.ttf');
+}
+
+@font-face {
+  font-family: 'Top Secret';
+  src: url('/assets/fonts/Top Secret.ttf');
+}
+
+:root {
+  --font-primary: 'Bar el Loro', sans-serif;
+  --font-secondary: 'Reward', sans-serif;
+  --font-secret: 'Top Secret', sans-serif;
+}
+
+html,
+body {
+  font-family: var(--font-primary);
+  background-color: #f0f0f0;
+  color: #300700;
+  margin: 0;
+  padding: 0;
+}
+
+::selection {
+  background: #ea580c;
+  color: #f0f0f0;
+}
