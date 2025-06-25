@@ -11,16 +11,17 @@ export interface CharacterType {
   avatar: string;
 }
 
-export interface PlayerRoleType {
+export interface PlayerType {
   role: number;
   name: string | null;
   isAdmin?: boolean;
+  isOnline: boolean;
 }
 
 export interface RoomType {
   id: number;
   code: string;
-  roles: PlayerRoleType[];
+  players: PlayerType[];
   timerLimit: number;
   isShowRole: boolean;
   isActive: boolean;

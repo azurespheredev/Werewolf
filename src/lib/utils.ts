@@ -1,5 +1,5 @@
 import { prisma } from '../../prisma/client';
-import { PlayerRoleType } from './types';
+import { PlayerType } from './types';
 
 export async function generateRoomCode(): Promise<string> {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -24,6 +24,6 @@ export async function generateRoomCode(): Promise<string> {
   return code;
 }
 
-export function shuffleRoleAssignment(roles: PlayerRoleType[]) {
+export function shuffleRoleAssignment(roles: PlayerType[]) {
   return roles;
 }

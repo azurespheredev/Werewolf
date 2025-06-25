@@ -17,7 +17,7 @@ datasource db {
 model rooms {
   id         Int      @id @default(autoincrement())
   code       String   @unique
-  roles      String   @default("[]")
+  players    String   @default("[]")
   timerLimit Int      @default(0)
   isShowRole Boolean  @default(false)
   isActive   Boolean  @default(true)
