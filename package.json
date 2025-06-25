@@ -39,13 +39,14 @@
     "start:preload": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
     "test": "jest",
-    "dev:server": "cd server && nodemon index.ts",
-    "build:server": "cd server && NODE_OPTIONS='--max-old-space-size=4096' tsc",
-    "start:server": "node server/dist/index.js",
+    "dev:api": "cd ./src/api && nodemon index.ts",
+    "build:api": "cd ./src/api && NODE_OPTIONS='--max-old-space-size=4096' tsc",
+    "start:api": "node ./src/api/dist/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name init",
     "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "ts-node ./scripts/seed.ts"
   },
   "browserslist": [
     "extends browserslist-config-erb"
