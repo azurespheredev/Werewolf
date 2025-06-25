@@ -20,18 +20,12 @@ const setupInterceptors = (instance: AxiosInstance) => {
         if (typeof errorDetail === 'string') {
           return Promise.reject(new Error(errorDetail));
         }
-        return Promise.reject(
-          new Error('Unexpected error occurred while parsing the error.'),
-        );
+        return Promise.reject(new Error('Unexpected error occurred.'));
       }
 
       if (error.request) {
         // No response was received (e.g. server is down, CORS issue, etc.)
-        return Promise.reject(
-          new Error(
-            'Cannot connect to server. Please check your network or server IP.',
-          ),
-        );
+        return Promise.reject(new Error('Cannot connect to server.'));
       }
 
       // Something else happened setting up the request
@@ -45,7 +39,7 @@ const setupInterceptors = (instance: AxiosInstance) => {
 // Call this after the user enters the server IP
 export const configureApiService = (baseURL: string) => {
   apiService = axios.create({
-    baseURL: `http://${baseURL}/api`,
+    baseURL: `http://${baseURL}`,
     headers: {
       'Content-Type': 'application/json',
     },

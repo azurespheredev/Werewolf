@@ -1,4 +1,5 @@
 import { Bounce, ToastContainer } from 'react-toastify';
+import { MemoryRouter as Router } from 'react-router-dom';
 import StoreProvider from './contexts/StoreProvider';
 import AppRouter from './routes/AppRouter';
 import 'react-toastify/dist/ReactToastify.css';
@@ -6,7 +7,9 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function App() {
   return (
     <StoreProvider>
-      <AppRouter />
+      <Router>
+        <AppRouter />
+      </Router>
 
       <ToastContainer
         position="top-right"
