@@ -39,13 +39,14 @@
     "start:preload": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
     "test": "jest",
-    "dev:server": "cd server && nodemon index.ts",
-    "build:server": "cd server && NODE_OPTIONS='--max-old-space-size=4096' tsc",
-    "start:server": "node server/dist/index.js",
+    "dev:api": "cd ./src/api && nodemon index.ts",
+    "build:api": "cd ./src/api && NODE_OPTIONS='--max-old-space-size=4096' tsc",
+    "start:api": "node ./src/api/dist/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name init",
     "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "ts-node ./scripts/seed.ts"
   },
   "browserslist": [
     "extends browserslist-config-erb"
@@ -102,6 +103,7 @@
     "@prisma/client": "^6.6.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/postcss": "^4.1.10",
+    "axios": "^1.10.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
@@ -114,12 +116,15 @@
     "prisma": "^6.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.3.0",
+    "react-toastify": "^11.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.0.4",
     "uuid": "^11.1.0",
-    "validator": "^13.9.0"
+    "validator": "^13.9.0",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
