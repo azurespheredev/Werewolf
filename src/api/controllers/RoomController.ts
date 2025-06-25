@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { matchedData, validationResult } from 'express-validator';
 import { prisma } from '../../../prisma/client';
 import { generateRoomCode } from '../../lib/utils';
+import { PlayerRoleType } from '../../lib/types';
 
 export default class RoomController {
   static async create(req: Request, res: Response) {
@@ -18,7 +19,22 @@ export default class RoomController {
     const body = matchedData(req);
 
     const roomCode = await generateRoomCode();
-    const roles = body.roles.map((role: number) => ({ role, name: '' }));
+    const roles: PlayerRoleType[] = body.roles.map(
+      (role: number, index: number) => {
+        if (index === 0) {
+          return {
+            role,
+            name: body.username,
+            isAdmin: true,
+          };
+        }
+
+        return {
+          role,
+          name: null,
+        };
+      },
+    );
 
     const createdRoom = await prisma.rooms.create({
       data: {
@@ -32,7 +48,10 @@ export default class RoomController {
     res.json({
       success: true,
       message: 'New room has been created successfully.',
-      data: createdRoom,
+      data: {
+        ...createdRoom,
+        roles: JSON.parse(createdRoom.roles),
+      },
     });
   }
 

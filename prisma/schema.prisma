@@ -20,6 +20,7 @@ model rooms {
   roles      String   @default("[]")
   timerLimit Int      @default(0)
   isShowRole Boolean  @default(false)
+  isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
