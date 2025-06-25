@@ -18,6 +18,22 @@ export default class RoomController {
 
     const body = matchedData(req);
 
+    const roleChecks = await Promise.all(
+      body.roles.map(async (roleId: number) => {
+        const exists = await prisma.roles.findUnique({ where: { id: roleId } });
+        return { roleId, exists };
+      }),
+    );
+
+    const invalidRole = roleChecks.find((r) => !r.exists);
+    if (invalidRole) {
+      res.json({
+        success: false,
+        message: `Player role with ID ${invalidRole.roleId} does not exist.`,
+      });
+      return;
+    }
+
     const roomCode = await generateRoomCode();
     const roles: PlayerRoleType[] = body.roles.map(
       (role: number, index: number) => {
@@ -47,7 +63,7 @@ export default class RoomController {
 
     res.json({
       success: true,
-      message: 'New room has been created successfully.',
+      message: 'New room has been created.',
       data: {
         ...createdRoom,
         roles: JSON.parse(createdRoom.roles),
