@@ -3,8 +3,16 @@
     transform: rotateZ(10deg);
   }
 
-  40% {
+  20% {
     transform: rotateZ(-5deg);
+  }
+
+  40% {
+    transform: rotateZ(3deg);
+  }
+
+  70% {
+    transform: rotateZ(-1deg);
   }
 
   100% {
@@ -14,5 +22,5 @@
 
 .anim-shake-to-left {
   transform-origin: 50% 200%;
-  animation: anim-shake-to-left 0.5s ease-in-out;
+  animation: anim-shake-to-left 0.75s ease-in-out;
 }

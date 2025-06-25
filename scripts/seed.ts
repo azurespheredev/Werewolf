@@ -1,3 +1,4 @@
+import { prisma } from '../prisma/client';
 import { RoleType } from '../src/lib/types';
 
 async function createRoles() {
@@ -105,6 +106,17 @@ async function createRoles() {
       avatar: '/images/characters/witch.jpg',
     },
   ];
+
+  try {
+    await prisma.roles.createMany({
+      data: roles,
+      skipDuplicates: true, // Skip if the role already exists
+    });
+
+    console.info('🟢 [DB:SEED] Successfully created roles in the database.');
+  } catch (error) {
+    console.error('🔴 [DB:SEED] Error creating roles data: ', error);
+  }
 }
 
 createRoles();
