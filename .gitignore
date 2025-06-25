@@ -20,7 +20,9 @@ node_modules
 
 release/app/dist
 release/build
+generated
 .erb/dll
+.env
 
 .idea
 npm-debug.log.*

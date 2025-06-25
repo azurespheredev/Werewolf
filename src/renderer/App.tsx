@@ -1,50 +1,29 @@
-import { MemoryRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
-import './App.css';
-
-function Hello() {
-  return (
-    <div>
-      <div className="Hello">
-        <img width="200" alt="icon" src={icon} />
-      </div>
-      <h1>electron-react-boilerplate</h1>
-      <div className="Hello">
-        <Link
-          to="https://electron-react-boilerplate.js.org/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="books">
-              📚
-            </span>
-            Read our docs
-          </button>
-        </Link>
-        <Link
-          to="https://github.com/sponsors/electron-react-boilerplate"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="folded hands">
-              🙏
-            </span>
-            Donate
-          </button>
-        </Link>
-      </div>
-    </div>
-  );
-}
+import { Bounce, ToastContainer } from 'react-toastify';
+import { MemoryRouter as Router } from 'react-router-dom';
+import StoreProvider from './contexts/StoreProvider';
+import AppRouter from './routes/AppRouter';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Hello />} />
-      </Routes>
-    </Router>
+    <StoreProvider>
+      <Router>
+        <AppRouter />
+      </Router>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        transition={Bounce}
+      />
+    </StoreProvider>
   );
 }
