@@ -1,32 +1,55 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import BackgroundBox from '../components/shared/BackgroundBox';
 import Button from '../components/shared/Button';
 import Input from '../components/shared/Input';
 import { configureApiService, getApiService } from '../../services/apiService';
+import { LocalStorageKeyEnum, RouteEnum } from '../../lib/enums';
 
 export default function WelcomePage() {
   const [serverAddress, setServerAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  const handleConnect = async () => {
-    if (!serverAddress) {
-      toast.error('Please fill the required field.');
-      return;
+  const handleConnect = useCallback(
+    async (address: string) => {
+      if (!address) {
+        toast.error('Please fill the required field.');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        configureApiService(`${address}:8000`);
+        const apiService = getApiService();
+        await apiService.get('/');
+
+        window.electron.ipcRenderer.sendMessage('maximize-window');
+
+        localStorage.setItem(LocalStorageKeyEnum.SERVER_ADDRESS, address);
+        toast.success('Connected to the server!');
+        navigate(RouteEnum.HOME);
+      } catch (errorMessage) {
+        toast.error(String(errorMessage));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [navigate],
+  );
+
+  useEffect(() => {
+    const serverAddressFromStorage = localStorage.getItem(
+      LocalStorageKeyEnum.SERVER_ADDRESS,
+    );
+
+    if (serverAddressFromStorage) {
+      setServerAddress(serverAddressFromStorage);
+      handleConnect(serverAddressFromStorage);
     }
-
-    try {
-      setIsLoading(true);
-
-      configureApiService(`http://${serverAddress}`);
-      const apiService = getApiService();
-      await apiService.get('/');
-    } catch (errorMessage) {
-      toast.error(String(errorMessage));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [handleConnect]);
 
   return (
     <BackgroundBox
@@ -54,7 +77,7 @@ export default function WelcomePage() {
 
           <Button
             className="w-40 h-14 mt-3"
-            onClick={handleConnect}
+            onClick={() => handleConnect(serverAddress)}
             loading={isLoading}
           >
             Connect

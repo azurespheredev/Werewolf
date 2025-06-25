@@ -4,7 +4,7 @@ import Button from '../components/shared/Button';
 export default function HomePage() {
   return (
     <BackgroundBox
-      src="/images/land.jpg"
+      src="/images/bg_home.jpg"
       className="flex justify-center items-center w-full h-screen"
     >
       <div className="flex flex-col gap-8 items-center">
