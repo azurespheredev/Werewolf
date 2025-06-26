@@ -1,7 +1,15 @@
+import { useState } from 'react';
 import BackgroundBox from '../components/shared/BackgroundBox';
 import Button from '../components/shared/Button';
+import Modal from '../components/shared/Modal';
 
 export default function HomePage() {
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState<boolean>(false);
+
+  const openDialog = () => setIsExitDialogOpen(true);
+  const closeDialog = () => setIsExitDialogOpen(false);
+  const handleExit = () => window.close();
+
   return (
     <BackgroundBox
       src="/images/bg_home.jpg"
@@ -18,8 +26,26 @@ export default function HomePage() {
           Create Room
         </Button>
         <Button className="w-60 px-8 py-4 anim-slide-to-top">Join Room</Button>
-        <Button className="w-60 px-8 py-4 anim-slide-to-top">Quit Game</Button>
+        <Button
+          className="w-60 px-8 py-4 anim-slide-to-top"
+          onClick={openDialog}
+        >
+          Quit Game
+        </Button>
       </div>
+
+      <Modal isOpen={isExitDialogOpen}>
+        <h1 className="text-xl">Are you sure you want to exit?</h1>
+
+        <div className="flex gap-8">
+          <Button className="w-40 px-4 py-3" onClick={handleExit}>
+            Yes
+          </Button>
+          <Button className="w-40 px-4 py-3" onClick={closeDialog}>
+            No
+          </Button>
+        </div>
+      </Modal>
     </BackgroundBox>
   );
 }
