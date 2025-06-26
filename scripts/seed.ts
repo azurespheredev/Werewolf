@@ -1,8 +1,8 @@
 import { prisma } from '../prisma/client';
-import { RoleType } from '../src/lib/types';
+import { CharacterType } from '../src/lib/types';
 
 async function createRoles() {
-  const roles: RoleType[] = [
+  const roles: CharacterType[] = [
     {
       name: 'Alpha Wolf',
       description:

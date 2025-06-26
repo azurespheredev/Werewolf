@@ -2,15 +2,20 @@ import { ReactNode } from 'react';
 import BackgroundBox from './BackgroundBox';
 
 interface ModalProps {
+  isOpen: boolean;
   children: ReactNode;
 }
 
-export default function Modal({ children }: ModalProps) {
+export default function Modal({ isOpen, children }: ModalProps) {
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <div className="flex justify-center items-center absolute top-0 left-0 right-0 bottom-0">
+    <div className="flex justify-center items-center fixed top-0 left-0 right-0 bottom-0">
       <BackgroundBox
-        src="/images/land.jpg"
-        className="min-w-[400px] min-h-72 p-4 rounded-lg border-8 border-t-red-100 border-r-red-900 border-b-red-950 border-l-red-300"
+        src="/images/bg_home.jpg"
+        className="flex flex-col justify-center items-center gap-8 min-w-[512px] min-h-72 p-4 text-orange-50 rounded-lg border-4 border-amber-600 shadow-2xl"
       >
         {children}
       </BackgroundBox>

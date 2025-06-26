@@ -8,6 +8,13 @@ const RoomCreateValidationSchema = [
     .isArray({ min: 3 })
     .withMessage('You must have to choose at least 3 roles.'),
 
+  body('username')
+    .notEmpty()
+    .withMessage('Username is required.')
+    .bail()
+    .isString()
+    .withMessage('Username must be a string.'),
+
   body('timerLimit')
     .notEmpty()
     .withMessage('Timer limit seconds settings is required.')

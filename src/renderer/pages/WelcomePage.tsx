@@ -6,6 +6,7 @@ import Button from '../components/shared/Button';
 import Input from '../components/shared/Input';
 import { configureApiService, getApiService } from '../../services/apiService';
 import { LocalStorageKeyEnum, RouteEnum } from '../../lib/enums';
+import { SERVER_PORT } from '../../lib/constants';
 
 export default function WelcomePage() {
   const [serverAddress, setServerAddress] = useState<string>('');
@@ -22,7 +23,7 @@ export default function WelcomePage() {
       try {
         setIsLoading(true);
 
-        configureApiService(`${address}:8000`);
+        configureApiService(`${address}:${SERVER_PORT}`);
         const apiService = getApiService();
         await apiService.get('/');
 
