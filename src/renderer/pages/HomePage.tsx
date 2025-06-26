@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BackgroundBox from '../components/shared/BackgroundBox';
 import Button from '../components/shared/Button';
 import Modal from '../components/shared/Modal';
+import { RouteEnum } from '../../lib/enums';
 
 export default function HomePage() {
   const [isExitDialogOpen, setIsExitDialogOpen] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const openDialog = () => setIsExitDialogOpen(true);
   const closeDialog = () => setIsExitDialogOpen(false);
@@ -22,10 +25,18 @@ export default function HomePage() {
           className="w-80 anim-slide-to-bottom"
         />
 
-        <Button className="w-60 px-8 py-4 anim-slide-to-top">
+        <Button
+          className="w-60 px-8 py-4 anim-slide-to-top"
+          onClick={() => navigate(RouteEnum.CREATE_ROOM)}
+        >
           Create Room
         </Button>
-        <Button className="w-60 px-8 py-4 anim-slide-to-top">Join Room</Button>
+        <Button
+          className="w-60 px-8 py-4 anim-slide-to-top"
+          onClick={() => navigate(RouteEnum.JOIN_ROOM)}
+        >
+          Join Room
+        </Button>
         <Button
           className="w-60 px-8 py-4 anim-slide-to-top"
           onClick={openDialog}

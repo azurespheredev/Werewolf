@@ -15,12 +15,12 @@ export interface PlayerType {
   role: number;
   name: string | null;
   isAdmin?: boolean;
+  isActive: boolean;
   isOnline: boolean;
 }
 
 export interface RoomType {
   id: number;
-  code: string;
   players: PlayerType[];
   timerLimit: number;
   isShowRole: boolean;
