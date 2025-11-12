@@ -180,6 +180,96 @@ export default class RoomController {
     }
   }
 
+  static async leave(req: Request, res: Response) {
+    try {
+      const { roomCode, playerId } = req.body;
+
+      if (!roomCode || playerId === undefined) {
+        res.status(400).json({
+          success: false,
+          message: 'Room code and player ID are required.',
+        });
+        return;
+      }
+
+      const room = await prisma.rooms.findFirst({
+        where: {
+          OR: [
+            { id: parseInt(roomCode, 10) || -1 },
+            { roomCode: roomCode },
+          ],
+          isActive: true,
+        },
+      });
+
+      if (!room) {
+        res.status(404).json({
+          success: false,
+          message: 'Room not found.',
+        });
+        return;
+      }
+
+      const players: PlayerType[] = JSON.parse(room.players);
+      const playerIndex = parseInt(playerId, 10);
+
+      if (playerIndex < 0 || playerIndex >= players.length) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid player ID.',
+        });
+        return;
+      }
+
+      const player = players[playerIndex];
+
+      // If the player leaving is the host (admin), delete the room
+      if (player.isAdmin) {
+        await prisma.rooms.update({
+          where: { id: room.id },
+          data: { isActive: false },
+        });
+
+        res.json({
+          success: true,
+          message: 'Room closed successfully.',
+          data: { roomClosed: true },
+        });
+        return;
+      }
+
+      // For non-admin players, clear their slot
+      players[playerIndex] = {
+        ...players[playerIndex],
+        name: null,
+        isOnline: false,
+        isReady: false,
+      };
+
+      await prisma.rooms.update({
+        where: { id: room.id },
+        data: {
+          players: JSON.stringify(players),
+        },
+      });
+
+      res.json({
+        success: true,
+        message: 'Left room successfully.',
+        data: {
+          ...room,
+          players,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to leave room.',
+        data: null,
+      });
+    }
+  }
+
   static async listActive(_req: Request, res: Response) {
     try {
       const rooms = await prisma.rooms.findMany({

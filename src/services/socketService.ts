@@ -61,6 +61,12 @@ class SocketService {
     }
   }
 
+  emitPlayerLeft(roomCode: string, playerId: number) {
+    if (this.socket) {
+      this.socket.emit('player-left', { roomCode, playerId });
+    }
+  }
+
   onPlayerJoined(callback: SocketCallback) {
     if (this.socket) {
       this.socket.on('player-joined', callback);

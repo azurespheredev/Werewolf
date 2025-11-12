@@ -55,6 +55,12 @@ io.on('connection', (socket) => {
     socket.to(roomCode).emit('player-left', { socketId: socket.id });
   });
 
+  // Player explicitly left (with player ID)
+  socket.on('player-left', (data: { roomCode: string; playerId: number }) => {
+    console.log(`Player ${data.playerId} left room ${data.roomCode}`);
+    socket.to(data.roomCode).emit('player-left', data);
+  });
+
   // Player ready
   socket.on('player-ready', (data: { roomCode: string; playerId: number }) => {
     io.to(data.roomCode).emit('player-ready-update', data);
@@ -66,24 +72,36 @@ io.on('connection', (socket) => {
   });
 
   // Phase changed
-  socket.on('phase-changed', (data: { roomCode: string; phase: string; dayNumber: number }) => {
-    io.to(data.roomCode).emit('phase-changed', data);
-  });
+  socket.on(
+    'phase-changed',
+    (data: { roomCode: string; phase: string; dayNumber: number }) => {
+      io.to(data.roomCode).emit('phase-changed', data);
+    },
+  );
 
   // Action submitted
-  socket.on('action-submitted', (data: { roomCode: string; playerId: number }) => {
-    io.to(data.roomCode).emit('action-submitted', data);
-  });
+  socket.on(
+    'action-submitted',
+    (data: { roomCode: string; playerId: number }) => {
+      io.to(data.roomCode).emit('action-submitted', data);
+    },
+  );
 
   // Vote submitted
-  socket.on('vote-submitted', (data: { roomCode: string; playerId: number }) => {
-    io.to(data.roomCode).emit('vote-submitted', data);
-  });
+  socket.on(
+    'vote-submitted',
+    (data: { roomCode: string; playerId: number }) => {
+      io.to(data.roomCode).emit('vote-submitted', data);
+    },
+  );
 
   // Player eliminated
-  socket.on('player-eliminated', (data: { roomCode: string; playerId: number }) => {
-    io.to(data.roomCode).emit('player-eliminated', data);
-  });
+  socket.on(
+    'player-eliminated',
+    (data: { roomCode: string; playerId: number }) => {
+      io.to(data.roomCode).emit('player-eliminated', data);
+    },
+  );
 
   // Game ended
   socket.on('game-ended', (data: { roomCode: string; winner: string }) => {
@@ -91,9 +109,17 @@ io.on('connection', (socket) => {
   });
 
   // Chat message
-  socket.on('chat-message', (data: { roomCode: string; playerId: number; message: string; playerName: string }) => {
-    io.to(data.roomCode).emit('chat-message', data);
-  });
+  socket.on(
+    'chat-message',
+    (data: {
+      roomCode: string;
+      playerId: number;
+      message: string;
+      playerName: string;
+    }) => {
+      io.to(data.roomCode).emit('chat-message', data);
+    },
+  );
 
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);

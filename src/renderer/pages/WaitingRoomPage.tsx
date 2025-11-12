@@ -90,6 +90,12 @@ export default function WaitingRoomPage() {
         socketService.onGameStarted(() => {
           navigate(RouteEnum.GAME, { state: { room } });
         });
+
+        // Listen for player left events
+        socketService.onPlayerLeft(() => {
+          // Refresh room data when a player leaves
+          fetchRoomData(room.roomCode);
+        });
       }
     }
 
@@ -121,13 +127,36 @@ export default function WaitingRoomPage() {
     }
   };
 
-  const handleLeaveRoom = () => {
-    if (room) {
-      socketService.leaveRoom(room.roomCode);
+  const handleLeaveRoom = async () => {
+    if (!room) return;
+
+    try {
+      const apiService = getApiService();
+      const response: ApiResponse = await apiService.post('/api/rooms/leave', {
+        roomCode: room.roomCode,
+        playerId: playerId.toString(),
+      });
+
+      if (response.success) {
+        // Emit player left event to notify other players
+        socketService.emitPlayerLeft(room.roomCode, playerId);
+        socketService.leaveRoom(room.roomCode);
+
+        localStorage.removeItem(LocalStorageKeyEnum.ROOM_CODE);
+        localStorage.removeItem(LocalStorageKeyEnum.PLAYER_ID);
+
+        toast.success('Left room successfully');
+        navigate(RouteEnum.HOME);
+      } else {
+        toast.error(response.message || 'Failed to leave room');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to leave room');
+      // Still navigate away even if the API call fails
+      localStorage.removeItem(LocalStorageKeyEnum.ROOM_CODE);
+      localStorage.removeItem(LocalStorageKeyEnum.PLAYER_ID);
+      navigate(RouteEnum.HOME);
     }
-    localStorage.removeItem(LocalStorageKeyEnum.ROOM_CODE);
-    localStorage.removeItem(LocalStorageKeyEnum.PLAYER_ID);
-    navigate(RouteEnum.HOME);
   };
 
   if (!room) {
@@ -177,29 +206,27 @@ export default function WaitingRoomPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {room.players.map((player: PlayerType, index: number) => {
-                const character = characters.find((c) => c.id === player.role);
                 const isCurrentPlayer = index === playerId;
                 let borderClass = 'border-gray-500';
                 if (player.isOnline) borderClass = 'border-green-500';
                 // eslint-disable-next-line
-                if (isCurrentPlayer) borderClass = 'border-yellow-400 anim-glow';
-
+                if (isCurrentPlayer)
+                  borderClass = 'border-yellow-400 anim-glow';
+                const playerKey = `player-${room.id}-${index}-${player.name || 'empty'}`;
 
                 return (
                   <div
-                    key={`${player.role}-${player.name ?? 'slot'}`}
+                    key={playerKey}
                     className={`relative bg-black/40 rounded-lg p-3 border-2 transition-all ${borderClass}`}
                   >
                     <div className="relative w-full aspect-square mb-2 rounded overflow-hidden">
-                      {character ? (
+                      <div className="w-full h-full bg-gray-700">
                         <img
-                          src={character.avatar}
-                          alt={character.name}
+                          src="/images/characters/user.jpg"
+                          alt="Hidden player"
                           className="w-full h-full object-cover opacity-30"
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gray-700" />
-                      )}
+                      </div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         {player.name ? (
                           <span className="text-white font-bold text-lg text-center px-2">
@@ -291,26 +318,48 @@ export default function WaitingRoomPage() {
           <h2 className="text-2xl font-bold text-orange-50 mb-4">
             Roles in This Game
           </h2>
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-3">
-            {room.players.map((player) => {
-              const character = characters.find((c) => c.id === player.role);
-              return character ? (
-                <div
-                  key={`${player.role}-${player.name ?? 'slot'}`}
-                  className="relative group"
-                  title={character.name}
-                >
-                  <img
-                    src={character.avatar}
-                    alt={character.name}
-                    className="w-full aspect-square object-cover rounded-lg border-2 border-gray-600 opacity-70 hover:opacity-100 transition-opacity"
-                  />
-                  <p className="text-xs text-center text-orange-50 mt-1 truncate">
-                    {character.name}
-                  </p>
-                </div>
-              ) : null;
-            })}
+          <p className="text-orange-200 text-sm mb-4">
+            Role assignments are hidden until the game starts
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {(() => {
+              const roleCounts = new Map<number, number>();
+              room.players.forEach((player) => {
+                roleCounts.set(
+                  player.role,
+                  (roleCounts.get(player.role) || 0) + 1,
+                );
+              });
+
+              return Array.from(roleCounts.entries()).map(([roleId, count]) => {
+                const character = characters.find((c) => c.id === roleId);
+                return character ? (
+                  <div
+                    key={`role-count-${roleId}`}
+                    className="relative bg-black/40 rounded-lg p-3 border-2 border-gray-600"
+                  >
+                    <div className="relative w-full aspect-square mb-2 rounded overflow-hidden">
+                      <img
+                        src={character.avatar}
+                        alt={character.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {count > 1 && (
+                        <div className="absolute top-1 right-1 bg-orange-600 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">
+                          {count}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-center text-orange-50 truncate font-semibold">
+                      {character.name}
+                    </p>
+                    <p className="text-xs text-center text-orange-300 capitalize">
+                      {character.team}
+                    </p>
+                  </div>
+                ) : null;
+              });
+            })()}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import BackgroundBox from '../components/shared/BackgroundBox';
@@ -18,6 +18,10 @@ export default function CreateRoomPage() {
   const [timerLimit, setTimerLimit] = useState<number>(60);
   const [isShowRole, setIsShowRole] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [draggedCharacterId, setDraggedCharacterId] = useState<number | null>(
+    null,
+  );
+  const [draggedSlotIndex, setDraggedSlotIndex] = useState<number | null>(null);
   const navigate = useNavigate();
 
   // Configure API from saved address and fetch all available characters
@@ -61,17 +65,71 @@ export default function CreateRoomPage() {
     }
   }, [playerCount, characters]);
 
-  const handleRoleToggle = (roleId: number) => {
-    setSelectedRoles((prev) => {
-      if (prev.includes(roleId)) {
-        return prev.filter((id) => id !== roleId);
-      }
-      if (prev.length < playerCount) {
-        return [...prev, roleId];
-      }
+  // Drag handlers for character cards
+  const handleDragStartFromGrid = (roleId: number) => {
+    setDraggedCharacterId(roleId);
+    setDraggedSlotIndex(null);
+  };
+
+  const handleDragStartFromSlot = (index: number) => {
+    setDraggedSlotIndex(index);
+    setDraggedCharacterId(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDropOnSlot = (targetIndex: number) => {
+    if (draggedCharacterId !== null) {
+      // Dropping from character grid to slot
+      setSelectedRoles((prev) => {
+        const newRoles = [...prev];
+        if (targetIndex < newRoles.length) {
+          // Replace existing slot
+          newRoles[targetIndex] = draggedCharacterId;
+        } else {
+          // Add to end
+          newRoles.push(draggedCharacterId);
+        }
+        return newRoles;
+      });
+    } else if (draggedSlotIndex !== null && draggedSlotIndex !== targetIndex) {
+      // Reordering within selected roles
+      setSelectedRoles((prev) => {
+        const newRoles = [...prev];
+        const [removed] = newRoles.splice(draggedSlotIndex, 1);
+        newRoles.splice(targetIndex, 0, removed);
+        return newRoles;
+      });
+    }
+    setDraggedCharacterId(null);
+    setDraggedSlotIndex(null);
+  };
+
+  const handleDropOnGrid = () => {
+    // Dropping back to grid removes from selection
+    if (draggedSlotIndex !== null) {
+      setSelectedRoles((prev) => {
+        const newRoles = [...prev];
+        newRoles.splice(draggedSlotIndex, 1);
+        return newRoles;
+      });
+    }
+    setDraggedCharacterId(null);
+    setDraggedSlotIndex(null);
+  };
+
+  const handleRemoveRole = (index: number) => {
+    setSelectedRoles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddRoleToEnd = (roleId: number) => {
+    if (selectedRoles.length < playerCount) {
+      setSelectedRoles((prev) => [...prev, roleId]);
+    } else {
       toast.warning(`You can only select ${playerCount} roles`);
-      return prev;
-    });
+    }
   };
 
   const handlePlayerCountChange = (count: number) => {
@@ -230,50 +288,96 @@ export default function CreateRoomPage() {
             <h2 className="text-2xl font-bold text-orange-50 mb-4">
               Selected Roles ({selectedRoles.length}/{playerCount})
             </h2>
+            <p className="text-orange-200 text-sm mb-3">
+              Drag characters here or click to remove
+            </p>
             <div className="space-y-2 max-h-72 overflow-y-auto">
-              {selectedRoles.map((roleId) => {
-                const character = characters.find((c) => c.id === roleId);
-                return character ? (
+              {Array.from({ length: playerCount }).map((_, index) => {
+                const roleId = selectedRoles[index];
+                const character = roleId
+                  ? characters.find((c) => c.id === roleId)
+                  : null;
+                const slotKey = `slot-pos-${index}-${roleId || 'empty'}`;
+
+                return (
                   <div
-                    key={`role-${roleId}`}
-                    className="flex items-center gap-3 bg-black/40 p-2 rounded"
+                    key={slotKey}
+                    className={`flex items-center gap-3 p-2 rounded border-2 transition-all ${
+                      character
+                        ? 'bg-black/40 border-orange-600/50 cursor-move hover:border-orange-600'
+                        : 'bg-black/20 border-dashed border-orange-600/30 hover:border-orange-600/60'
+                    }`}
+                    draggable={!!character}
+                    onDragStart={() => handleDragStartFromSlot(index)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDropOnSlot(index)}
+                    onClick={() => character && handleRemoveRole(index)}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && character) {
+                        e.preventDefault();
+                        handleRemoveRole(index);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                   >
-                    <img
-                      src={character.avatar}
-                      alt={character.name}
-                      className="w-12 h-12 rounded object-cover"
-                    />
-                    <div>
-                      <p className="text-orange-50 font-semibold">
-                        {character.name}
-                      </p>
-                      <p className="text-orange-200 text-xs capitalize">
-                        Team: {character.team}
-                      </p>
-                    </div>
+                    {character ? (
+                      <>
+                        <img
+                          src={character.avatar}
+                          alt={character.name}
+                          className="w-12 h-12 rounded object-cover"
+                        />
+                        <div className="flex-1">
+                          <p className="text-orange-50 font-semibold">
+                            {character.name}
+                          </p>
+                          <p className="text-orange-200 text-xs capitalize">
+                            Team: {character.team}
+                          </p>
+                        </div>
+                        <span className="text-orange-400 text-xs">
+                          ✕ Click to remove
+                        </span>
+                      </>
+                    ) : (
+                      <div className="w-full text-center text-orange-400 text-sm py-2">
+                        Slot {index + 1} - Drop character here
+                      </div>
+                    )}
                   </div>
-                ) : null;
+                );
               })}
             </div>
           </div>
         </div>
 
         {/* Character Selection Grid */}
-        <div className="bg-black/60 backdrop-blur-sm rounded-lg p-6 border-2 border-orange-600 mb-6">
+        <div
+          className="bg-black/60 backdrop-blur-sm rounded-lg p-6 border-2 border-orange-600 mb-6"
+          onDragOver={handleDragOver}
+          onDrop={handleDropOnGrid}
+        >
           <h2 className="text-2xl font-bold text-orange-50 mb-4">
-            Select Characters (Click to add/remove)
+            Select Characters (Drag to slots above or click to add)
           </h2>
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4">
             {characters.map((character) => (
-              <CharacterCard
+              <div
                 key={character.id}
-                character={character}
-                isRevealed
-                onClick={() => handleRoleToggle(character.id)}
-                isSelected={selectedRoles.includes(character.id)}
-                showDetails
-                className="w-full aspect-square"
-              />
+                draggable
+                onDragStart={() => handleDragStartFromGrid(character.id)}
+                className="cursor-move"
+              >
+                <CharacterCard
+                  character={character}
+                  isRevealed
+                  onClick={() => handleAddRoleToEnd(character.id)}
+                  isSelected={false}
+                  showDetails
+                  className="w-full aspect-square"
+                />
+              </div>
             ))}
           </div>
         </div>
