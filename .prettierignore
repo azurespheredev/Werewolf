@@ -1,0 +1,12 @@
+# Ignore artifacts:
+build/
+dist/
+coverage/
+.next/
+out/
+node_modules/
+
+# Ignore files:
+*.env
+*.log
+.DS_Store

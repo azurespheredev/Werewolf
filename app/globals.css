@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Bar el Loro";
+  src: url("/fonts/Bar el Loro.otf");
+}
+
+@font-face {
+  font-family: "Reward";
+  src: url("/fonts/Reward.ttf");
+}
+
+@font-face {
+  font-family: "Top Secret";
+  src: url("/fonts/Top Secret.ttf");
+}
+
+:root {
+  --background: #f0f0f0;
+  --foreground: #300700;
+  --font-primary: "Bar el Loro", sans-serif;
+  --font-secondary: "Top Secret", sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+::selection {
+  background: #ea580c;
+  color: #f0f0f0;
+}
+
+/* Animations */
+@keyframes anim-shake-to-left {
+  0% {
+    transform: rotateZ(10deg);
+  }
+  20% {
+    transform: rotateZ(-5deg);
+  }
+  40% {
+    transform: rotateZ(3deg);
+  }
+  70% {
+    transform: rotateZ(-1deg);
+  }
+  100% {
+    transform: rotateZ(0);
+  }
+}
+
+@keyframes anim-slide-to-top {
+  0% {
+    transform: translateY(768px);
+  }
+  20% {
+    transform: translateY(-64px);
+  }
+  40% {
+    transform: translateY(32px);
+  }
+  70% {
+    transform: translateY(-16px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes anim-slide-to-bottom {
+  0% {
+    transform: translateY(-768px);
+  }
+  20% {
+    transform: translateY(64px);
+  }
+  40% {
+    transform: translateY(-32px);
+  }
+  70% {
+    transform: translateY(16px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes anim-popup {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes anim-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes anim-fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes anim-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes anim-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255, 215, 0, 0.8),
+      0 0 30px rgba(255, 215, 0, 0.6);
+  }
+}
+
+.anim-popup {
+  animation: anim-popup 0.5s ease-in-out;
+}
+
+.anim-shake-to-left {
+  transform-origin: 50% 200%;
+  animation: anim-shake-to-left 0.75s ease-in-out;
+}
+
+.anim-slide-to-top {
+  animation: anim-slide-to-top 1s ease-in-out;
+}
+
+.anim-slide-to-bottom {
+  animation: anim-slide-to-bottom 1s ease-in-out;
+}
+
+.anim-fade-in {
+  animation: anim-fade-in 0.5s ease-in-out;
+}
+
+.anim-fade-out {
+  animation: anim-fade-out 0.5s ease-in-out;
+}
+
+.anim-pulse {
+  animation: anim-pulse 2s ease-in-out infinite;
+}
+
+.anim-glow {
+  animation: anim-glow 2s ease-in-out infinite;
+}
