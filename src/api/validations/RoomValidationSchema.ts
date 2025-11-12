@@ -1,6 +1,6 @@
 import { body } from 'express-validator';
 
-const RoomCreateValidationSchema = [
+export const RoomCreateValidationSchema = [
   body('roles')
     .notEmpty()
     .withMessage('Roles are required.')
@@ -25,6 +25,22 @@ const RoomCreateValidationSchema = [
   body('isShowRole')
     .isBoolean()
     .withMessage('Show roles setting must be a boolean.'),
+];
+
+export const RoomJoinValidationSchema = [
+  body('roomCode')
+    .notEmpty()
+    .withMessage('Room code is required.')
+    .bail()
+    .isString()
+    .withMessage('Room code must be a string.'),
+
+  body('username')
+    .notEmpty()
+    .withMessage('Username is required.')
+    .bail()
+    .isString()
+    .withMessage('Username must be a string.'),
 ];
 
 export default RoomCreateValidationSchema;

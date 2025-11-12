@@ -15,18 +15,64 @@ datasource db {
 }
 
 model rooms {
-  id         Int      @id @default(autoincrement())
-  players    String   @default("[]")
-  timerLimit Int      @default(0)
-  isShowRole Boolean  @default(false)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int           @id @default(autoincrement())
+  roomCode    String        @unique @default(uuid())
+  players     String        @default("[]") // JSON array of PlayerType
+  timerLimit  Int           @default(60)
+  isShowRole  Boolean       @default(false)
+  isActive    Boolean       @default(true)
+  gameStarted Boolean       @default(false)
+  maxPlayers  Int           @default(10)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  gameSessions GameSession[]
 }
 
 model roles {
   id          Int    @id @default(autoincrement())
-  name        String
+  name        String @unique
   description String
   avatar      String
+  team        String @default("villager") // villager, werewolf, neutral
+  priority    Int    @default(0) // Night action order
+}
+
+model GameSession {
+  id              Int      @id @default(autoincrement())
+  roomId          Int
+  room            rooms    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  phase           String   @default("waiting") // waiting, night, day, voting, ended
+  dayNumber       Int      @default(0)
+  timeRemaining   Int      @default(0)
+  currentPhaseStarted DateTime @default(now())
+  alivePlayers    String   @default("[]") // JSON array of player indices
+  deadPlayers     String   @default("[]") // JSON array of player indices
+  votes           String   @default("{}") // JSON object {voterId: targetId}
+  nightActions    String   @default("{}") // JSON object {playerId: {action, target}}
+  gameLog         GameLog[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model GameLog {
+  id              Int          @id @default(autoincrement())
+  gameSessionId   Int
+  gameSession     GameSession  @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  phase           String       // night, day, voting
+  dayNumber       Int
+  action          String       // killed, voted, protected, revealed, etc.
+  actorId         Int?         // Player who performed action
+  targetId        Int?         // Player who was targeted
+  description     String       // Human readable description
+  timestamp       DateTime     @default(now())
+}
+
+model ChatMessage {
+  id         Int      @id @default(autoincrement())
+  roomId     Int
+  playerId   Int      // Index in players array
+  playerName String
+  message    String
+  isSystem   Boolean  @default(false)
+  timestamp  DateTime @default(now())
 }
