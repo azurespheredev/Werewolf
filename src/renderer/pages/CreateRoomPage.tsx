@@ -5,10 +5,10 @@ import BackgroundBox from '../components/shared/BackgroundBox';
 import Button from '../components/shared/Button';
 import Input from '../components/shared/Input';
 import CharacterCard from '../components/shared/CharacterCard';
-import { getApiService } from '../../services/apiService';
+import { configureApiService, getApiService } from '../../services/apiService';
 import { CharacterType, ApiResponse, RoomType } from '../../lib/types';
 import { LocalStorageKeyEnum, RouteEnum } from '../../lib/enums';
-import { PLAYER_ROLES_DATA } from '../../lib/constants';
+import { PLAYER_ROLES_DATA, SERVER_PORT } from '../../lib/constants';
 
 export default function CreateRoomPage() {
   const [characters, setCharacters] = useState<CharacterType[]>([]);
@@ -20,17 +20,23 @@ export default function CreateRoomPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  // Fetch all available characters
+  // Configure API from saved address and fetch all available characters
   useEffect(() => {
     const fetchCharacters = async () => {
       try {
+        const savedAddress = localStorage.getItem(
+          LocalStorageKeyEnum.SERVER_ADDRESS,
+        );
+        if (savedAddress) {
+          configureApiService(`${savedAddress}:${SERVER_PORT}`);
+        }
         const apiService = getApiService();
         const response: ApiResponse<CharacterType[]> =
           await apiService.get('/api/roles');
         if (response.success && response.data) {
           setCharacters(response.data);
         }
-      } catch (error) {
+      } catch {
         toast.error('Failed to load characters');
       }
     };
@@ -48,7 +54,9 @@ export default function CreateRoomPage() {
     if (playerCount >= 4 && playerCount <= 23 && characters.length > 0) {
       const rolesForCount = PLAYER_ROLES_DATA[playerCount - 4];
       if (rolesForCount) {
-        setSelectedRoles(rolesForCount);
+        // Ensure unique role IDs only
+        const uniqueRoles = Array.from(new Set(rolesForCount));
+        setSelectedRoles(uniqueRoles);
       }
     }
   }, [playerCount, characters]);
@@ -67,9 +75,10 @@ export default function CreateRoomPage() {
   };
 
   const handlePlayerCountChange = (count: number) => {
-    if (count < 4) count = 4;
-    if (count > 23) count = 23;
-    setPlayerCount(count);
+    let validCount = count;
+    if (validCount < 4) validCount = 4;
+    if (validCount > 23) validCount = 23;
+    setPlayerCount(validCount);
   };
 
   const handleCreateRoom = useCallback(async () => {
@@ -143,10 +152,15 @@ export default function CreateRoomPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-orange-50 mb-2">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label
+                  htmlFor="username-input"
+                  className="block text-orange-50 mb-2"
+                >
                   Your Username
                 </label>
                 <Input
+                  id="username-input"
                   type="text"
                   placeholder="Enter your name"
                   value={username}
@@ -157,10 +171,14 @@ export default function CreateRoomPage() {
               </div>
 
               <div>
-                <label className="block text-orange-50 mb-2">
+                <label
+                  htmlFor="player-count-range"
+                  className="block text-orange-50 mb-2"
+                >
                   Players: {playerCount}
                 </label>
                 <input
+                  id="player-count-range"
                   type="range"
                   min="4"
                   max="23"
@@ -173,10 +191,14 @@ export default function CreateRoomPage() {
               </div>
 
               <div>
-                <label className="block text-orange-50 mb-2">
+                <label
+                  htmlFor="timer-limit-range"
+                  className="block text-orange-50 mb-2"
+                >
                   Timer Limit (seconds): {timerLimit}
                 </label>
                 <input
+                  id="timer-limit-range"
                   type="range"
                   min="30"
                   max="300"
@@ -195,6 +217,7 @@ export default function CreateRoomPage() {
                   onChange={(e) => setIsShowRole(e.target.checked)}
                   className="w-5 h-5 accent-orange-600"
                 />
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                 <label htmlFor="showRole" className="text-orange-50">
                   Show roles to all players after game ends
                 </label>
@@ -208,11 +231,11 @@ export default function CreateRoomPage() {
               Selected Roles ({selectedRoles.length}/{playerCount})
             </h2>
             <div className="space-y-2 max-h-72 overflow-y-auto">
-              {selectedRoles.map((roleId, index) => {
+              {selectedRoles.map((roleId) => {
                 const character = characters.find((c) => c.id === roleId);
                 return character ? (
                   <div
-                    key={`${roleId}-${index}`}
+                    key={`role-${roleId}`}
                     className="flex items-center gap-3 bg-black/40 p-2 rounded"
                   >
                     <img

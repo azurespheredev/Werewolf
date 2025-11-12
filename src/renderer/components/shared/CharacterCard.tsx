@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CharacterType } from '../../../lib/types';
 
 interface CharacterCardProps {
@@ -18,7 +18,7 @@ export default function CharacterCard({
   isSelected = false,
   showDetails = false,
 }: CharacterCardProps) {
-  const [isFlipped, setIsFlipped] = useState(isRevealed);
+  const [isFlipped] = useState(isRevealed);
 
   const handleClick = () => {
     if (onClick) {
@@ -26,24 +26,34 @@ export default function CharacterCard({
     }
   };
 
-  const displayImage =
-    isFlipped && character ? character.avatar : '/images/characters/user.jpg';
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if ((event.key === 'Enter' || event.key === ' ') && onClick) {
+      event.preventDefault();
+      onClick();
+    }
+  };
 
-  const borderColor = isSelected
-    ? 'border-yellow-400 shadow-yellow-400'
-    : character?.team === 'werewolf'
-      ? 'border-red-600 shadow-red-600'
-      : character?.team === 'villager'
-        ? 'border-blue-600 shadow-blue-600'
-        : 'border-purple-600 shadow-purple-600';
+  let borderColor = 'border-gray-600 shadow-gray-600';
+  if (isSelected) {
+    borderColor = 'border-yellow-400 shadow-yellow-400';
+  } else if (character?.team === 'werewolf') {
+    borderColor = 'border-red-600 shadow-red-600';
+  } else if (character?.team === 'villager') {
+    borderColor = 'border-blue-600 shadow-blue-600';
+  } else if (character?.team === 'neutral') {
+    borderColor = 'border-purple-600 shadow-purple-600';
+  }
 
   return (
     <div
       className={`relative group cursor-pointer ${className}`}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
     >
       <div
-        className={`relative overflow-hidden rounded-lg border-4 ${borderColor} shadow-lg transition-all duration-300 hover:scale-105 ${
+        className={`relative h-full overflow-hidden rounded-lg border-4 ${borderColor} shadow-lg transition-all duration-300 hover:scale-105 ${
           isSelected ? 'scale-110 shadow-2xl' : ''
         }`}
         style={{

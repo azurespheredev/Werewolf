@@ -1,6 +1,7 @@
 import { prisma } from '../../../prisma/client';
-import { PlayerType, GameSessionType, NightActionType } from '../../lib/types';
+import { PlayerType, NightActionType } from '../../lib/types';
 import { GamePhaseEnum } from '../../lib/enums';
+import { Team } from '../../../generated/prisma';
 
 interface ActionResult {
   playerId: number;
@@ -213,16 +214,16 @@ export class GameManager {
     const roles = await prisma.roles.findMany();
     const roleMap = new Map(roles.map((r) => [r.id, r]));
 
-    let aliveWerewolves = 0;
-    let aliveVillagers = 0;
+  let aliveWerewolves = 0;
+  let aliveVillagers = 0;
 
     for (const playerId of alivePlayers) {
       const player = players[playerId];
       const role = roleMap.get(player.role);
 
-      if (role?.team === 'werewolf') {
+      if (role?.team === Team.werewolf) {
         aliveWerewolves++;
-      } else if (role?.team === 'villager') {
+      } else if (role?.team === Team.villager) {
         aliveVillagers++;
       }
     }
@@ -312,7 +313,7 @@ export class GameManager {
    */
   async logEvent(
     sessionId: number,
-    phase: string,
+    phase: GamePhaseEnum,
     dayNumber: number,
     action: string,
     actorId: number | null,
@@ -322,7 +323,7 @@ export class GameManager {
     await prisma.gameLog.create({
       data: {
         gameSessionId: sessionId,
-        phase,
+        phase: phase as any, // cast to underlying Prisma enum (GamePhase)
         dayNumber,
         action,
         actorId,

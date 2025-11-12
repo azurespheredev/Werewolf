@@ -3,6 +3,7 @@ import { matchedData, validationResult } from 'express-validator';
 import { prisma } from '../../../prisma/client';
 import { PlayerType } from '../../lib/types';
 import { GamePhaseEnum } from '../../lib/enums';
+import { GamePhase } from '../../../generated/prisma';
 import gameManager from '../services/GameManager';
 
 export default class GameController {
@@ -70,7 +71,7 @@ export default class GameController {
       const gameSession = await prisma.gameSession.create({
         data: {
           roomId: room.id,
-          phase: GamePhaseEnum.NIGHT,
+          phase: GamePhaseEnum.NIGHT as unknown as GamePhase,
           dayNumber: 1,
           timeRemaining: room.timerLimit,
           alivePlayers: JSON.stringify(alivePlayers),
@@ -92,7 +93,7 @@ export default class GameController {
       // Log game start
       await gameManager.logEvent(
         gameSession.id,
-        'start',
+        GamePhaseEnum.NIGHT,
         1,
         'game_started',
         null,
@@ -148,7 +149,7 @@ export default class GameController {
         return;
       }
 
-      if (session.phase !== GamePhaseEnum.NIGHT) {
+  if (session.phase !== (GamePhaseEnum.NIGHT as unknown as GamePhase)) {
         res.json({
           success: false,
           message: 'Not in night phase.',
@@ -211,7 +212,7 @@ export default class GameController {
         return;
       }
 
-      if (session.phase !== GamePhaseEnum.VOTING) {
+  if (session.phase !== (GamePhaseEnum.VOTING as unknown as GamePhase)) {
         res.json({
           success: false,
           message: 'Not in voting phase.',
@@ -339,13 +340,13 @@ export default class GameController {
         return;
       }
 
-      const currentPhase = session.phase;
+  const currentPhase = session.phase as unknown as GamePhaseEnum;
       let nextPhase: GamePhaseEnum;
       let deaths: number[] = [];
       let eliminated: number | null = null;
 
       // Process current phase
-      if (currentPhase === GamePhaseEnum.NIGHT) {
+  if (currentPhase === GamePhaseEnum.NIGHT) {
         // Process night actions
         const result = await gameManager.processNightActions(session.id);
         deaths = result.deaths;
@@ -354,7 +355,7 @@ export default class GameController {
         for (const playerId of deaths) {
           await gameManager.logEvent(
             session.id,
-            'night',
+            GamePhaseEnum.NIGHT,
             session.dayNumber,
             'death',
             null,
@@ -374,7 +375,7 @@ export default class GameController {
         if (eliminated !== null) {
           await gameManager.logEvent(
             session.id,
-            'voting',
+            GamePhaseEnum.VOTING,
             session.dayNumber,
             'elimination',
             null,
@@ -399,12 +400,12 @@ export default class GameController {
       if (winner) {
         await prisma.gameSession.update({
           where: { id: session.id },
-          data: { phase: GamePhaseEnum.ENDED },
+          data: { phase: GamePhaseEnum.ENDED as unknown as GamePhase },
         });
 
         await gameManager.logEvent(
           session.id,
-          'end',
+          GamePhaseEnum.ENDED,
           session.dayNumber,
           'game_ended',
           null,
