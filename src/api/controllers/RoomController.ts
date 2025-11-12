@@ -40,8 +40,9 @@ export default class RoomController {
             role,
             name: body.username,
             isAdmin: true,
-            isActive: false,
+            isAlive: true,
             isOnline: true,
+            isReady: true,
           };
         }
 
@@ -49,8 +50,9 @@ export default class RoomController {
           role,
           name: null,
           isAdmin: false,
-          isActive: false,
+          isAlive: true,
           isOnline: false,
+          isReady: false,
         };
       },
     );
@@ -60,6 +62,7 @@ export default class RoomController {
         players: JSON.stringify(roles),
         timerLimit: body.timerLimit,
         isShowRole: body.isShowRole,
+        maxPlayers: body.roles.length,
       },
     });
 
@@ -74,10 +77,137 @@ export default class RoomController {
   }
 
   static async join(req: Request, res: Response) {
+    const errors = validationResult(req).array();
+
+    if (errors.length > 0) {
+      res.json({
+        success: false,
+        message: errors[0].msg,
+      });
+      return;
+    }
+
+    const body = matchedData(req);
+
+    const room = await prisma.rooms.findFirst({
+      where: {
+        OR: [
+          { id: parseInt(body.roomCode, 10) || -1 },
+          { roomCode: body.roomCode },
+        ],
+        isActive: true,
+        gameStarted: false,
+      },
+    });
+
+    if (!room) {
+      res.json({
+        success: false,
+        message: 'Room not found or game already started.',
+      });
+      return;
+    }
+
+    const players: PlayerType[] = JSON.parse(room.players);
+    const emptySlotIndex = players.findIndex((p) => p.name === null);
+
+    if (emptySlotIndex === -1) {
+      res.json({
+        success: false,
+        message: 'Room is full.',
+      });
+      return;
+    }
+
+    players[emptySlotIndex] = {
+      ...players[emptySlotIndex],
+      name: body.username,
+      isOnline: true,
+      isReady: false,
+    };
+
+    await prisma.rooms.update({
+      where: { id: room.id },
+      data: {
+        players: JSON.stringify(players),
+      },
+    });
+
     res.json({
       success: true,
-      message: 'Join room functionality is not implemented yet.',
-      data: null,
+      message: 'Joined room successfully.',
+      data: {
+        ...room,
+        players,
+        playerId: emptySlotIndex,
+      },
     });
+  }
+
+  static async getByCode(req: Request, res: Response) {
+    try {
+      const { code } = req.params;
+      const room = await prisma.rooms.findFirst({
+        where: {
+          OR: [{ id: parseInt(code, 10) || -1 }, { roomCode: code }],
+          isActive: true,
+        },
+      });
+
+      if (!room) {
+        res.status(404).json({
+          success: false,
+          message: 'Room not found.',
+          data: null,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: 'Room fetched successfully.',
+        data: {
+          ...room,
+          players: JSON.parse(room.players),
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch room.',
+        data: null,
+      });
+    }
+  }
+
+  static async listActive(_req: Request, res: Response) {
+    try {
+      const rooms = await prisma.rooms.findMany({
+        where: {
+          isActive: true,
+          gameStarted: false,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      const roomsData = rooms.map((room) => ({
+        ...room,
+        players: JSON.parse(room.players),
+      }));
+
+      res.json({
+        success: true,
+        message: 'Active rooms fetched successfully.',
+        data: roomsData,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch rooms.',
+        data: null,
+      });
+    }
   }
 }

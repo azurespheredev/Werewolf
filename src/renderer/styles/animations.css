@@ -79,6 +79,57 @@
   }
 }
 
+@keyframes anim-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes anim-fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes anim-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes anim-card-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+@keyframes anim-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255, 215, 0, 0.8),
+      0 0 30px rgba(255, 215, 0, 0.6);
+  }
+}
+
 .anim-popup {
   animation: anim-popup 0.5s ease-in-out;
 }
@@ -94,4 +145,20 @@
 
 .anim-slide-to-bottom {
   animation: anim-slide-to-bottom 1s ease-in-out;
+}
+
+.anim-fade-in {
+  animation: anim-fade-in 0.5s ease-in-out;
+}
+
+.anim-fade-out {
+  animation: anim-fade-out 0.5s ease-in-out;
+}
+
+.anim-pulse {
+  animation: anim-pulse 2s ease-in-out infinite;
+}
+
+.anim-glow {
+  animation: anim-glow 2s ease-in-out infinite;
 }
