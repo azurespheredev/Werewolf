@@ -1,4 +1,4 @@
-import { GamePhaseEnum } from "./enums";
+import { GamePhaseEnum } from "@/lib/enums";
 
 export interface CharacterType {
   id: number;

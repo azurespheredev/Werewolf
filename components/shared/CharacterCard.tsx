@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { CharacterType } from "../../lib/types";
+import { CharacterType } from "@/lib/types";
 
 interface CharacterCardProps {
   character: CharacterType | null;

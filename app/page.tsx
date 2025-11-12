@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import BackgroundBox from "../components/shared/BackgroundBox";
-import Button from "../components/shared/Button";
-import { RouteEnum } from "../lib/enums";
+import BackgroundBox from "@/components/shared/BackgroundBox";
+import Button from "@/components/shared/Button";
+import { RouteEnum } from "@/lib/enums";
 
 export default function HomePage() {
   return (

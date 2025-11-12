@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import Button from "../shared/Button";
-import Input from "../shared/Input";
+import Button from "@/components/shared/Button";
+import Input from "@/components/shared/Input";
 
 interface DayPhaseActionsProps {
   chatMessages: Array<{

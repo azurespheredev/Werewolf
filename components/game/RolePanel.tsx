@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import CharacterCard from "../shared/CharacterCard";
-import type { CharacterType } from "../../lib/types";
+import CharacterCard from "@/components/shared/CharacterCard";
+import type { CharacterType } from "@/lib/types";
 
 interface RolePanelProps {
   role: CharacterType;

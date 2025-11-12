@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
-import StoreProvider from "../contexts/StoreProvider";
+import StoreProvider from "@/contexts/StoreProvider";
 import { Bounce, ToastContainer } from "react-toastify";
 
 const barElLoro = localFont({

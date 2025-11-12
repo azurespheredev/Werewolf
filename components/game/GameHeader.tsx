@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import Timer from "../shared/Timer";
-import { GamePhaseEnum } from "../../lib/enums";
+import Timer from "@/components/shared/Timer";
+import { GamePhaseEnum } from "@/lib/enums";
 
 interface GameHeaderProps {
   phaseLabel: string;

@@ -4,14 +4,14 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "react-toastify";
-import BackgroundBox from "../../components/shared/BackgroundBox";
-import Button from "../../components/shared/Button";
-import Input from "../../components/shared/Input";
-import CharacterCard from "../../components/shared/CharacterCard";
-import { getApiService } from "../../services/apiService";
-import { CharacterType, ApiResponse, RoomType } from "../../lib/types";
-import { LocalStorageKeyEnum, RouteEnum } from "../../lib/enums";
-import { PLAYER_ROLES_DATA } from "../../lib/constants";
+import BackgroundBox from "@/components/shared/BackgroundBox";
+import Button from "@/components/shared/Button";
+import Input from "@/components/shared/Input";
+import CharacterCard from "@/components/shared/CharacterCard";
+import { getApiService } from "@/services/apiService";
+import { CharacterType, ApiResponse, RoomType } from "@/lib/types";
+import { LocalStorageKeyEnum, RouteEnum } from "@/lib/enums";
+import { PLAYER_ROLES_DATA } from "@/lib/constants";
 
 export default function CreateRoomPage() {
   const [characters, setCharacters] = useState<CharacterType[]>([]);

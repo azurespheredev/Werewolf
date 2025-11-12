@@ -3,19 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import AnimatedBackground from "../../components/game/AnimatedBackground";
-import DayPhaseActions from "../../components/game/DayPhaseActions";
-import VotingPhaseActions from "../../components/game/VotingPhaseActions";
-import NightPhaseActions from "../../components/game/NightPhaseActions";
-import GameStatistics from "../../components/game/GameStatistics";
-import PlayerCard from "../../components/game/PlayerCard";
-import GameHeader from "../../components/game/GameHeader";
-import RolePanel from "../../components/game/RolePanel";
-import GameLog from "../../components/game/GameLog";
-import { getApiService } from "../../services/apiService";
-import { socketService } from "../../services/socketService";
-import { GamePhaseEnum, LocalStorageKeyEnum, RouteEnum } from "../../lib/enums";
-import type { ApiResponse, CharacterType, GameSessionType, PlayerType, RoomType } from "../../lib/types";
+import AnimatedBackground from "@/components/game/AnimatedBackground";
+import DayPhaseActions from "@/components/game/DayPhaseActions";
+import VotingPhaseActions from "@/components/game/VotingPhaseActions";
+import NightPhaseActions from "@/components/game/NightPhaseActions";
+import GameStatistics from "@/components/game/GameStatistics";
+import PlayerCard from "@/components/game/PlayerCard";
+import GameHeader from "@/components/game/GameHeader";
+import RolePanel from "@/components/game/RolePanel";
+import GameLog from "@/components/game/GameLog";
+import { getApiService } from "@/services/apiService";
+import { socketService } from "@/services/socketService";
+import { GamePhaseEnum, LocalStorageKeyEnum, RouteEnum } from "@/lib/enums";
+import type { ApiResponse, CharacterType, GameSessionType, PlayerType, RoomType } from "@/lib/types";
 
 export default function GamePage() {
   const router = useRouter();

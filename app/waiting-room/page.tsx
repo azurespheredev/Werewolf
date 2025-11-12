@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "react-toastify";
-import BackgroundBox from "../../components/shared/BackgroundBox";
-import Button from "../../components/shared/Button";
-import Modal from "../../components/shared/Modal";
-import { getApiService } from "../../services/apiService";
-import { socketService } from "../../services/socketService";
-import { ApiResponse, CharacterType, PlayerType, RoomType } from "../../lib/types";
-import { LocalStorageKeyEnum, RouteEnum } from "../../lib/enums";
+import BackgroundBox from "@/components/shared/BackgroundBox";
+import Button from "@/components/shared/Button";
+import Modal from "@/components/shared/Modal";
+import { getApiService } from "@/services/apiService";
+import { socketService } from "@/services/socketService";
+import { ApiResponse, CharacterType, PlayerType, RoomType } from "@/lib/types";
+import { LocalStorageKeyEnum, RouteEnum } from "@/lib/enums";
 
 export default function WaitingRoomPage() {
   const router = useRouter();

@@ -1,5 +1,5 @@
 import { ButtonHTMLAttributes } from "react";
-import Loader from "./Loader";
+import Loader from "@/components/shared/Loader";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
