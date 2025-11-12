@@ -11,7 +11,6 @@ import { getApiService } from "../../services/apiService";
 import { socketService } from "../../services/socketService";
 import { ApiResponse, CharacterType, PlayerType, RoomType } from "../../lib/types";
 import { LocalStorageKeyEnum, RouteEnum } from "../../lib/enums";
-import { SERVER_PORT } from "../../lib/constants";
 
 export default function WaitingRoomPage() {
   const router = useRouter();
@@ -78,21 +77,19 @@ export default function WaitingRoomPage() {
   useEffect(() => {
     if (!room) return;
 
-    const serverAddress = localStorage.getItem(LocalStorageKeyEnum.SERVER_ADDRESS);
-    if (serverAddress) {
-      socketService.connect(`http://${serverAddress}:${SERVER_PORT}`);
-      socketService.joinRoom(room.roomCode);
+    // Connect to the same origin (Next.js server) for websockets
+    socketService.connect();
+    socketService.joinRoom(room.roomCode);
 
-      socketService.onGameStarted(() => {
-        router.push(RouteEnum.GAME);
-      });
+    socketService.onGameStarted(() => {
+      router.push(RouteEnum.GAME);
+    });
 
-      // Listen for player left events
-      socketService.onPlayerLeft(() => {
-        // Refresh room data when a player leaves
-        fetchRoomData(room.roomCode);
-      });
-    }
+    // Listen for player left events
+    socketService.onPlayerLeft(() => {
+      // Refresh room data when a player leaves
+      fetchRoomData(room.roomCode);
+    });
 
     return () => {
       socketService.removeAllListeners();
@@ -207,6 +204,7 @@ export default function WaitingRoomPage() {
                           src="/images/characters/user.jpg"
                           alt="Hidden player"
                           fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
                           className="object-cover opacity-30"
                         />
                       </div>
@@ -299,7 +297,13 @@ export default function WaitingRoomPage() {
                     className="relative bg-black/40 rounded-lg p-3 border-2 border-gray-600"
                   >
                     <div className="relative w-full aspect-square mb-2 rounded overflow-hidden">
-                      <Image src={character.avatar} alt={character.name} fill className="object-cover" />
+                      <Image
+                        src={character.avatar}
+                        alt={character.name}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                        className="object-cover"
+                      />
                       {count > 1 && (
                         <div className="absolute top-1 right-1 bg-orange-600 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">
                           {count}

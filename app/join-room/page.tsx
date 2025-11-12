@@ -31,7 +31,7 @@ export default function JoinRoomPage() {
     try {
       setIsFetchingRooms(true);
       const apiService = getApiService();
-      const response: ApiResponse<RoomType[]> = await apiService.get("/api/rooms/active");
+  const response: ApiResponse<RoomType[]> = await apiService.get("/api/rooms?active=true");
       if (response.success && response.data) {
         setActiveRooms(response.data);
       }

@@ -8,10 +8,10 @@ import BackgroundBox from "../../components/shared/BackgroundBox";
 import Button from "../../components/shared/Button";
 import Input from "../../components/shared/Input";
 import CharacterCard from "../../components/shared/CharacterCard";
-import { configureApiService, getApiService } from "../../services/apiService";
+import { getApiService } from "../../services/apiService";
 import { CharacterType, ApiResponse, RoomType } from "../../lib/types";
 import { LocalStorageKeyEnum, RouteEnum } from "../../lib/enums";
-import { PLAYER_ROLES_DATA, SERVER_PORT } from "../../lib/constants";
+import { PLAYER_ROLES_DATA } from "../../lib/constants";
 
 export default function CreateRoomPage() {
   const [characters, setCharacters] = useState<CharacterType[]>([]);
@@ -29,10 +29,6 @@ export default function CreateRoomPage() {
   useEffect(() => {
     const fetchCharacters = async () => {
       try {
-        const savedAddress = localStorage.getItem(LocalStorageKeyEnum.SERVER_ADDRESS);
-        if (savedAddress) {
-          configureApiService(`${savedAddress}:${SERVER_PORT}`);
-        }
         const apiService = getApiService();
         const response: ApiResponse<CharacterType[]> = await apiService.get("/api/roles");
         if (response.success && response.data) {

@@ -7,15 +7,14 @@ class SocketService {
   private socket: Socket | null = null;
   private serverUrl: string = "";
 
-  connect(serverUrl: string) {
+  connect(serverUrl?: string) {
     if (this.socket?.connected) {
       return;
     }
 
-    this.serverUrl = serverUrl;
-    this.socket = io(serverUrl, {
-      transports: ["websocket", "polling"],
-    });
+    this.serverUrl = serverUrl ?? (typeof window !== "undefined" ? window.location.origin : "");
+  const options = { transports: ["websocket", "polling"] };
+    this.socket = serverUrl ? io(serverUrl, options) : io(options);
 
     this.socket.on("connect", () => {
       console.log("✅ Connected to WebSocket server");

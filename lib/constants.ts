@@ -1,5 +1,3 @@
-export const SERVER_PORT = 8888;
-
 export const PLAYER_ROLES_DATA = [
   [15, 15, 16, 12],
   [15, 15, 16, 12, 6],

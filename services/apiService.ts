@@ -1,11 +1,5 @@
 import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "axios";
 
-let apiService: AxiosInstance = axios.create({
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
 // Interceptor to handle errors globally
 const setupInterceptors = (instance: AxiosInstance) => {
   instance.interceptors.response.use(
@@ -30,15 +24,13 @@ const setupInterceptors = (instance: AxiosInstance) => {
   );
 };
 
-// Call this to configure the API service with server address
-export const configureApiService = (baseURL: string) => {
-  apiService = axios.create({
-    baseURL: `http://${baseURL}`,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  setupInterceptors(apiService);
-};
+// Create a single Axios instance and always attach interceptors
+const apiService: AxiosInstance = axios.create({
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+setupInterceptors(apiService);
 
 export const getApiService = () => apiService;

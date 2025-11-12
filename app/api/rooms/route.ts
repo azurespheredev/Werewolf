@@ -3,11 +3,14 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Optional filter: /api/rooms?active=true
+  const { searchParams } = new URL(request.url);
+  const activeOnly = searchParams.get("active") === "true";
   try {
     const rooms = await prisma.rooms.findMany({
       where: {
-        isActive: true,
+        isActive: activeOnly ? true : undefined,
         gameStarted: false,
       },
       orderBy: { createdAt: "desc" },
