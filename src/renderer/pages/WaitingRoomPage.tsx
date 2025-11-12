@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import BackgroundBox from '../components/shared/BackgroundBox';
 import Button from '../components/shared/Button';
 import Modal from '../components/shared/Modal';
 import { getApiService } from '../../services/apiService';
+import { socketService } from '../../services/socketService';
 import {
   ApiResponse,
   CharacterType,
@@ -12,6 +13,7 @@ import {
   RoomType,
 } from '../../lib/types';
 import { LocalStorageKeyEnum, RouteEnum } from '../../lib/enums';
+import { SERVER_PORT } from '../../lib/constants';
 
 export default function WaitingRoomPage() {
   const location = useLocation();
@@ -22,6 +24,42 @@ export default function WaitingRoomPage() {
   const [characters, setCharacters] = useState<CharacterType[]>([]);
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState<boolean>(false);
   const [playerId, setPlayerId] = useState<number>(-1);
+
+  // Fetch roles used in this room
+  const fetchCharacters = useCallback(async () => {
+    try {
+      const apiService = getApiService();
+      const response: ApiResponse<CharacterType[]> =
+        await apiService.get('/api/roles');
+      if (response.success && response.data) {
+        setCharacters(response.data);
+      }
+    } catch {
+      console.error('Failed to fetch characters');
+    }
+  }, []);
+
+  // Fetch the latest room data by code
+  const fetchRoomData = useCallback(
+    async (roomCode: string) => {
+      try {
+        const apiService = getApiService();
+        const response: ApiResponse<RoomType> = await apiService.get(
+          `/api/rooms/${roomCode}`,
+        );
+        if (response.success && response.data) {
+          setRoom(response.data);
+          return;
+        }
+        toast.error('Room not found');
+        navigate(RouteEnum.HOME);
+      } catch {
+        toast.error('Failed to load room');
+        navigate(RouteEnum.HOME);
+      }
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     const storedPlayerId = localStorage.getItem(LocalStorageKeyEnum.PLAYER_ID);
@@ -39,44 +77,54 @@ export default function WaitingRoomPage() {
         navigate(RouteEnum.HOME);
       }
     }
-  }, []);
 
-  const fetchCharacters = async () => {
-    try {
-      const apiService = getApiService();
-      const response: ApiResponse<CharacterType[]> =
-        await apiService.get('/api/roles');
-      if (response.success && response.data) {
-        setCharacters(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch characters');
-    }
-  };
-
-  const fetchRoomData = async (roomCode: string) => {
-    try {
-      const apiService = getApiService();
-      const response: ApiResponse<RoomType> = await apiService.get(
-        `/api/rooms/${roomCode}`,
+    // Setup WebSocket
+    if (room) {
+      const serverAddress = localStorage.getItem(
+        LocalStorageKeyEnum.SERVER_ADDRESS,
       );
-      if (response.success && response.data) {
-        setRoom(response.data);
-      } else {
-        toast.error('Room not found');
-        navigate(RouteEnum.HOME);
-      }
-    } catch (error) {
-      toast.error('Failed to load room');
-      navigate(RouteEnum.HOME);
-    }
-  };
+      if (serverAddress) {
+        socketService.connect(`http://${serverAddress}:${SERVER_PORT}`);
+        socketService.joinRoom(room.roomCode);
 
-  const handleStartGame = () => {
-    toast.info('Start game functionality coming soon!');
+        socketService.onGameStarted(() => {
+          navigate(RouteEnum.GAME, { state: { room } });
+        });
+      }
+    }
+
+    return () => {
+      if (room) {
+        socketService.removeAllListeners();
+      }
+    };
+  }, [room, navigate, fetchRoomData, fetchCharacters]);
+
+  const handleStartGame = async () => {
+    if (!room) return;
+
+    try {
+      const apiService = getApiService();
+      const response: ApiResponse = await apiService.post('/api/game/start', {
+        roomId: room.id,
+      });
+
+      if (response.success) {
+        toast.success('Game starting!');
+        socketService.emitGameStarted(room.roomCode);
+        navigate(RouteEnum.GAME, { state: { room } });
+      } else {
+        toast.error(response.message || 'Failed to start game');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to start game');
+    }
   };
 
   const handleLeaveRoom = () => {
+    if (room) {
+      socketService.leaveRoom(room.roomCode);
+    }
     localStorage.removeItem(LocalStorageKeyEnum.ROOM_CODE);
     localStorage.removeItem(LocalStorageKeyEnum.PLAYER_ID);
     navigate(RouteEnum.HOME);
@@ -131,17 +179,16 @@ export default function WaitingRoomPage() {
               {room.players.map((player: PlayerType, index: number) => {
                 const character = characters.find((c) => c.id === player.role);
                 const isCurrentPlayer = index === playerId;
+                let borderClass = 'border-gray-500';
+                if (player.isOnline) borderClass = 'border-green-500';
+                // eslint-disable-next-line
+                if (isCurrentPlayer) borderClass = 'border-yellow-400 anim-glow';
+
 
                 return (
                   <div
-                    key={index}
-                    className={`relative bg-black/40 rounded-lg p-3 border-2 transition-all ${
-                      isCurrentPlayer
-                        ? 'border-yellow-400 anim-glow'
-                        : player.isOnline
-                          ? 'border-green-500'
-                          : 'border-gray-500'
-                    }`}
+                    key={`${player.role}-${player.name ?? 'slot'}`}
+                    className={`relative bg-black/40 rounded-lg p-3 border-2 transition-all ${borderClass}`}
                   >
                     <div className="relative w-full aspect-square mb-2 rounded overflow-hidden">
                       {character ? (
@@ -245,11 +292,11 @@ export default function WaitingRoomPage() {
             Roles in This Game
           </h2>
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-3">
-            {room.players.map((player, index) => {
+            {room.players.map((player) => {
               const character = characters.find((c) => c.id === player.role);
               return character ? (
                 <div
-                  key={index}
+                  key={`${player.role}-${player.name ?? 'slot'}`}
                   className="relative group"
                   title={character.name}
                 >
