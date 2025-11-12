@@ -149,7 +149,7 @@ export default class GameController {
         return;
       }
 
-  if (session.phase !== (GamePhaseEnum.NIGHT as unknown as GamePhase)) {
+      if (session.phase !== (GamePhaseEnum.NIGHT as unknown as GamePhase)) {
         res.json({
           success: false,
           message: 'Not in night phase.',
@@ -212,7 +212,7 @@ export default class GameController {
         return;
       }
 
-  if (session.phase !== (GamePhaseEnum.VOTING as unknown as GamePhase)) {
+      if (session.phase !== (GamePhaseEnum.VOTING as unknown as GamePhase)) {
         res.json({
           success: false,
           message: 'Not in voting phase.',
@@ -340,13 +340,13 @@ export default class GameController {
         return;
       }
 
-  const currentPhase = session.phase as unknown as GamePhaseEnum;
+      const currentPhase = session.phase as unknown as GamePhaseEnum;
       let nextPhase: GamePhaseEnum;
       let deaths: number[] = [];
       let eliminated: number | null = null;
 
       // Process current phase
-  if (currentPhase === GamePhaseEnum.NIGHT) {
+      if (currentPhase === GamePhaseEnum.NIGHT) {
         // Process night actions
         const result = await gameManager.processNightActions(session.id);
         deaths = result.deaths;
@@ -401,6 +401,12 @@ export default class GameController {
         await prisma.gameSession.update({
           where: { id: session.id },
           data: { phase: GamePhaseEnum.ENDED as unknown as GamePhase },
+        });
+
+        // Mark room as inactive (expired)
+        await prisma.rooms.update({
+          where: { id: session.roomId },
+          data: { isActive: false },
         });
 
         await gameManager.logEvent(

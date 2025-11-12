@@ -2,8 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import AnimatedBackground from '../components/shared/AnimatedBackground';
-import CharacterCard from '../components/shared/CharacterCard';
-import Timer from '../components/shared/Timer';
+import DayPhaseActions from '../components/game/DayPhaseActions';
+import VotingPhaseActions from '../components/game/VotingPhaseActions';
+import NightPhaseActions from '../components/game/NightPhaseActions';
+import GameStatistics from '../components/game/GameStatistics';
+import PlayerCard from '../components/game/PlayerCard';
+import GameHeader from '../components/game/GameHeader';
+import RolePanel from '../components/game/RolePanel';
+import GameLog from '../components/game/GameLog';
 import { getApiService } from '../../services/apiService';
 import { socketService } from '../../services/socketService';
 import { GamePhaseEnum, LocalStorageKeyEnum, RouteEnum } from '../../lib/enums';
@@ -26,6 +32,7 @@ export default function GamePage() {
   const [players, setPlayers] = useState<PlayerType[]>([]);
   const [me, setMe] = useState<number>(-1);
   const [role, setRole] = useState<CharacterType | null>(null);
+  const [allCharacters, setAllCharacters] = useState<CharacterType[]>([]);
   const [phase, setPhase] = useState<GamePhaseEnum>(GamePhaseEnum.NIGHT);
   const [day, setDay] = useState<number>(1);
   const [winner, setWinner] = useState<string | null>(null);
@@ -34,6 +41,10 @@ export default function GamePage() {
   const [target, setTarget] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [logs, setLogs] = useState<{ id: string; text: string }[]>([]);
+  const [chatMessages, setChatMessages] = useState<
+    { id: string; playerId: number; playerName: string; message: string }[]
+  >([]);
+  const [chatInput, setChatInput] = useState<string>('');
   // Derived
   const isAlive = useMemo(
     () => (session ? session.alivePlayers.includes(me) : true),
@@ -72,11 +83,13 @@ export default function GamePage() {
         10,
       );
       setMe(storedId);
-      if (storedId >= 0) {
-        const roleId = data.room.players[storedId]?.role;
-        const rolesRes: ApiResponse<CharacterType[]> =
-          await api.get('/api/roles');
-        if (rolesRes.success && rolesRes.data) {
+      // Fetch all characters for role reveal
+      const rolesRes: ApiResponse<CharacterType[]> =
+        await api.get('/api/roles');
+      if (rolesRes.success && rolesRes.data) {
+        setAllCharacters(rolesRes.data);
+        if (storedId >= 0) {
+          const roleId = data.room.players[storedId]?.role;
           setRole(rolesRes.data.find((r) => r.id === roleId) || null);
         }
       }
@@ -97,6 +110,7 @@ export default function GamePage() {
       setDay(data.dayNumber);
       setSubmitted(false);
       setTarget(null);
+      setChatMessages([]);
       addLog(`Phase → ${data.phase} (Day ${data.dayNumber})`);
       if (room) fetchState(room.roomCode);
     });
@@ -116,6 +130,18 @@ export default function GamePage() {
     socketService.onVoteSubmitted((data) =>
       addLog(`Player ${data.playerId + 1} voted`),
     );
+    socketService.onChatMessage((data) => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id,
+          playerId: data.playerId,
+          playerName: data.playerName,
+          message: data.message,
+        },
+      ]);
+    });
     return () => socketService.removeAllListeners();
   }, [room, fetchState, addLog]);
 
@@ -182,6 +208,13 @@ export default function GamePage() {
     }
   };
 
+  const sendChat = useCallback(() => {
+    if (!room || !chatInput.trim()) return;
+    const playerName = players[me]?.name || `Player ${me + 1}`;
+    socketService.emitChatMessage(room.roomCode, me, chatInput, playerName);
+    setChatInput('');
+  }, [room, chatInput, players, me]);
+
   const advancePhase = useCallback(async () => {
     if (!session || !room) return;
     const isAdmin = players[me]?.isAdmin;
@@ -227,98 +260,55 @@ export default function GamePage() {
   return (
     <AnimatedBackground phase={phase}>
       <div className="w-full h-screen flex flex-col overflow-hidden">
-        <header className="bg-slate-900/80 backdrop-blur-sm border-b border-orange-500/30 p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold text-orange-50">
-                {phaseLabel}
-              </h1>
-              <span className="text-xl text-orange-200">Day {day}</span>
-              {!isAlive && (
-                <span className="px-3 py-1 bg-red-600/80 rounded-full text-white font-semibold">
-                  Eliminated
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <Timer
-                initialTime={room.timerLimit}
-                key={`${phase}-${day}`}
-                onTimeEnd={advancePhase}
-              />
-              <button
-                type="button"
-                onClick={leaveGame}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-              >
-                Leave Game
-              </button>
-            </div>
-          </div>
-        </header>
+        <GameHeader
+          phaseLabel={phaseLabel}
+          day={day}
+          isAlive={isAlive}
+          timerLimit={room.timerLimit}
+          phase={phase}
+          onTimerEnd={advancePhase}
+          onLeaveGame={leaveGame}
+        />
         <div className="flex-1 flex gap-4 p-4 overflow-hidden">
-          <div className="w-80 bg-slate-900/80 backdrop-blur-sm rounded-xl border border-orange-500/30 p-6 space-y-4 overflow-y-auto">
-            <h2 className="text-2xl font-bold text-orange-50 mb-4">
-              Your Role
-            </h2>
-            <div className="flex justify-center">
-              <CharacterCard
-                character={role}
-                isRevealed={reveal}
-                onClick={() => setReveal(!reveal)}
-              />
-            </div>
-            <div className="mt-4 space-y-2">
-              <p className="text-orange-50 font-semibold">{role.name}</p>
-              <p className="text-orange-100/80 text-sm">{role.description}</p>
-            </div>
-          </div>
+          <RolePanel
+            role={role}
+            isRevealed={reveal}
+            onToggleReveal={() => setReveal(!reveal)}
+          />
           <div className="flex-1 bg-slate-900/80 backdrop-blur-sm rounded-xl border border-orange-500/30 p-6 overflow-y-auto">
-            <h2 className="text-2xl font-bold text-orange-50 mb-4">Players</h2>
+            <h2 className="text-2xl font-bold text-orange-50 mb-4">
+              {winner && room?.isShowRole ? 'Final Roles Revealed' : 'Players'}
+            </h2>
             <div className="grid grid-cols-3 gap-4">
               {players.map((p, idx) => {
-                const sel = selectable(idx);
-                const classes = sel
-                  ? 'cursor-pointer hover:scale-105'
-                  : 'opacity-50';
-                const active =
-                  target === idx ? 'ring-4 ring-orange-500 scale-105' : '';
-                return (
-                  <div
-                    role="button"
-                    tabIndex={sel ? 0 : -1}
-                    aria-disabled={!sel}
-                    key={`${p.name ?? 'slot'}-${p.role}`}
-                    onClick={() => sel && setTarget(idx)}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ' ') && sel) {
-                        e.preventDefault();
-                        setTarget(idx);
-                      }
-                    }}
-                    className={`relative transform transition-all ${classes} ${active}`}
-                  >
-                    <CharacterCard
-                      character={{
+                const showActualRole = !!(winner && room?.isShowRole);
+                const actualCharacter = allCharacters.find(
+                  (c) => c.id === p.role,
+                );
+                const displayCharacter =
+                  showActualRole && actualCharacter
+                    ? actualCharacter
+                    : {
                         ...(role as CharacterType),
                         name: p.name ?? 'Waiting',
-                      }}
-                      isRevealed={false}
-                    />
-                    <div className="absolute bottom-2 left-2 right-2 bg-slate-900/90 rounded-lg px-2 py-1">
-                      <p className="text-white text-sm font-semibold text-center truncate">
-                        {p.name ?? 'Waiting...'}
-                        {idx === me ? ' (YOU)' : ''}
-                      </p>
-                    </div>
-                    {!alive(idx) && (
-                      <div className="absolute inset-0 bg-black/70 rounded-lg flex items-center justify-center">
-                        <span className="text-red-500 font-bold text-xl">
-                          ELIMINATED
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                      };
+
+                const playerKey = `${room.id}-player-${p.name || 'empty'}-${p.role}-${idx}`;
+
+                return (
+                  <PlayerCard
+                    key={playerKey}
+                    player={p}
+                    index={idx}
+                    currentPlayerId={me}
+                    isAlive={alive(idx)}
+                    isSelectable={selectable(idx)}
+                    isSelected={target === idx}
+                    character={displayCharacter}
+                    actualCharacter={actualCharacter}
+                    showActualRole={showActualRole}
+                    onSelect={() => selectable(idx) && setTarget(idx)}
+                  />
                 );
               })}
             </div>
@@ -328,29 +318,13 @@ export default function GamePage() {
             {(() => {
               if (winner) {
                 return (
-                  <div className="space-y-4">
-                    <div
-                      className={`p-6 rounded-lg border-2 ${
-                        winner === 'villager'
-                          ? 'bg-blue-900/50 border-blue-500'
-                          : 'bg-red-900/50 border-red-500'
-                      }`}
-                    >
-                      <h3 className="text-2xl font-bold text-white mb-2">
-                        {winner === 'villager'
-                          ? 'Villagers Win!'
-                          : 'Werewolves Win!'}
-                      </h3>
-                      <p className="text-white/80">The game has ended.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={leaveGame}
-                      className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
-                    >
-                      Return to Home
-                    </button>
-                  </div>
+                  <GameStatistics
+                    winner={winner}
+                    day={day}
+                    alivePlayers={session.alivePlayers}
+                    deadPlayers={session.deadPlayers}
+                    onLeaveGame={leaveGame}
+                  />
                 );
               }
               if (!isAlive) {
@@ -364,36 +338,14 @@ export default function GamePage() {
               }
               if (phase === GamePhaseEnum.NIGHT) {
                 if (canAct) {
-                  if (submitted) {
-                    return (
-                      <div className="p-3 bg-green-900/30 rounded-lg border border-green-500/30">
-                        <p className="text-green-200 text-sm">
-                          Action submitted. Waiting for others...
-                        </p>
-                      </div>
-                    );
-                  }
                   return (
-                    <div className="space-y-3">
-                      <p className="text-orange-100/80 text-sm">
-                        Select a player and submit your night action
-                      </p>
-                      <button
-                        type="button"
-                        onClick={submitNightAction}
-                        disabled={target === null}
-                        className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                      >
-                        Submit Action
-                      </button>
-                      <button
-                        type="button"
-                        onClick={skipNightAction}
-                        className="w-full px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                      >
-                        Skip Action
-                      </button>
-                    </div>
+                    <NightPhaseActions
+                      canAct={canAct}
+                      submitted={submitted}
+                      target={target}
+                      onSubmitAction={submitNightAction}
+                      onSkipAction={skipNightAction}
+                    />
                   );
                 }
                 return (
@@ -404,60 +356,32 @@ export default function GamePage() {
               }
               if (phase === GamePhaseEnum.DAY) {
                 return (
-                  <div className="p-4 bg-yellow-900/30 rounded-lg border border-yellow-500/30">
-                    <p className="text-yellow-200 text-sm">
-                      Discuss. Voting will begin soon.
-                    </p>
-                  </div>
+                  <DayPhaseActions
+                    chatMessages={chatMessages}
+                    chatInput={chatInput}
+                    currentPlayerId={me}
+                    onChatInputChange={setChatInput}
+                    onSendChat={sendChat}
+                  />
                 );
               }
               if (phase === GamePhaseEnum.VOTING) {
-                if (submitted) {
-                  return (
-                    <div className="p-3 bg-green-900/30 rounded-lg border border-green-500/30">
-                      <p className="text-green-200 text-sm">
-                        Vote submitted. Waiting for others...
-                      </p>
-                    </div>
-                  );
-                }
                 return (
-                  <div className="space-y-3">
-                    <p className="text-orange-100/80 text-sm">
-                      Select a player to vote out
-                    </p>
-                    <button
-                      type="button"
-                      onClick={submitVote}
-                      disabled={target === null}
-                      className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                    >
-                      Cast Vote
-                    </button>
-                  </div>
+                  <VotingPhaseActions
+                    submitted={submitted}
+                    target={target}
+                    chatMessages={chatMessages}
+                    chatInput={chatInput}
+                    currentPlayerId={me}
+                    onSubmitVote={submitVote}
+                    onChatInputChange={setChatInput}
+                    onSendChat={sendChat}
+                  />
                 );
               }
               return null;
             })()}
-            <div className="mt-6 pt-6 border-t border-orange-500/30">
-              <h3 className="text-xl font-bold text-orange-50 mb-3">
-                Game Log
-              </h3>
-              <div className="space-y-2 text-sm text-orange-100/80 max-h-64 overflow-y-auto">
-                {logs.length === 0 ? (
-                  <p>Game started. Good luck!</p>
-                ) : (
-                  logs.map((log) => (
-                    <p
-                      key={log.id}
-                      className="py-1 border-b border-orange-500/10"
-                    >
-                      {log.text}
-                    </p>
-                  ))
-                )}
-              </div>
-            </div>
+            <GameLog logs={logs} />
           </div>
         </div>
       </div>
