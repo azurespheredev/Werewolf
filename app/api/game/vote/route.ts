@@ -20,9 +20,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Session not found" }, { status: 404 });
     }
 
-    // Store vote in database (you may want to create a separate votes table)
-    // For now, we'll just log it
-    console.log(`Player ${playerId} voted for player ${targetId}`);
+    // Persist vote in session.votes JSON { [voterId]: targetId }
+    const votes = (() => {
+      try {
+        return JSON.parse(session.votes as unknown as string);
+      } catch {
+        return {} as Record<number, number>;
+      }
+    })() as Record<number, number>;
+
+    votes[playerId] = targetId;
+
+    await prisma.gameSession.update({
+      where: { id: sessionId },
+      data: { votes: JSON.stringify(votes) },
+    });
 
     return NextResponse.json({
       success: true,

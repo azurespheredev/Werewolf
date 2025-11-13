@@ -23,6 +23,9 @@ const topSecret = localFont({
 export const metadata: Metadata = {
   title: "Werewolf Game",
   description: "Online multiplayer Werewolf game",
+  icons: {
+    icon: "/images/logo.png",
+  },
 };
 
 export default function RootLayout({

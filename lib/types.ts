@@ -22,6 +22,7 @@ export interface RoomType {
   id: number;
   roomCode: string;
   players: PlayerType[];
+  selectedRoles?: number[];
   timerLimit: number;
   isShowRole: boolean;
   isActive: boolean;

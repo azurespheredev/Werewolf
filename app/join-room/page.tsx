@@ -7,6 +7,7 @@ import BackgroundBox from "@/components/shared/BackgroundBox";
 import Button from "@/components/shared/Button";
 import Input from "@/components/shared/Input";
 import { getApiService } from "@/services/apiService";
+import { socketService } from "@/services/socketService";
 import { ApiResponse, RoomType } from "@/lib/types";
 import { LocalStorageKeyEnum, RouteEnum } from "@/lib/enums";
 
@@ -31,7 +32,7 @@ export default function JoinRoomPage() {
     try {
       setIsFetchingRooms(true);
       const apiService = getApiService();
-  const response: ApiResponse<RoomType[]> = await apiService.get("/api/rooms?active=true");
+      const response: ApiResponse<RoomType[]> = await apiService.get("/api/rooms?active=true");
       if (response.success && response.data) {
         setActiveRooms(response.data);
       }
@@ -66,6 +67,11 @@ export default function JoinRoomPage() {
           localStorage.setItem(LocalStorageKeyEnum.USERNAME, username.trim());
           localStorage.setItem(LocalStorageKeyEnum.ROOM_CODE, response.data.roomCode);
           localStorage.setItem(LocalStorageKeyEnum.PLAYER_ID, response.data.playerId.toString());
+
+          // Connect to socket and emit player-joined event
+          socketService.connect();
+          socketService.joinRoom(response.data.roomCode);
+
           toast.success("Joined room successfully!");
           router.push(RouteEnum.WAITING_ROOM);
         }
@@ -80,7 +86,10 @@ export default function JoinRoomPage() {
   );
 
   return (
-    <BackgroundBox src="/images/bg_home.jpg" className="flex flex-col items-center w-full h-screen overflow-y-auto p-8">
+    <BackgroundBox
+      src="/images/village_daylight.jpg"
+      className="flex flex-col items-center w-full h-screen overflow-y-auto p-8"
+    >
       <div className="w-full max-w-4xl">
         <div className="flex justify-between items-center mb-6">
           <Button className="px-6 py-2 text-base" onClick={() => router.push(RouteEnum.HOME)}>
@@ -141,8 +150,9 @@ export default function JoinRoomPage() {
               <p className="text-orange-200 text-center py-8">No active rooms available</p>
             ) : (
               activeRooms.map((room) => {
-                const filledSlots = room.players.filter((p) => p.name !== null).length;
-                const totalSlots = room.players.length;
+                const players = Array.isArray(room.players) ? room.players : [];
+                const filledSlots = players.filter((p) => p.name !== null).length;
+                const totalSlots = players.length;
 
                 return (
                   <div

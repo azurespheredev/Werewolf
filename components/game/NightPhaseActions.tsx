@@ -9,6 +9,8 @@ interface NightPhaseActionsProps {
   target: number | null;
   onSubmitAction: () => void;
   onSkipAction: () => void;
+  submitDisabled?: boolean;
+  hint?: string;
 }
 
 export default function NightPhaseActions({
@@ -17,6 +19,8 @@ export default function NightPhaseActions({
   target,
   onSubmitAction,
   onSkipAction,
+  submitDisabled = false,
+  hint,
 }: NightPhaseActionsProps) {
   if (submitted) {
     return (
@@ -43,10 +47,15 @@ export default function NightPhaseActions({
             ? `Target selected. Click submit to confirm your action.`
             : `Select a player to target with your night action.`}
         </p>
+        {hint && <p className="text-purple-300 text-xs mt-1">{hint}</p>}
       </div>
 
       <div className="flex gap-2">
-        <Button className="flex-1 px-4 py-3 text-sm" onClick={onSubmitAction} disabled={target === null}>
+        <Button
+          className="flex-1 px-4 py-3 text-sm"
+          onClick={onSubmitAction}
+          disabled={target === null || submitDisabled}
+        >
           Submit Action
         </Button>
         <Button className="flex-1 px-4 py-3 text-sm bg-gray-600 hover:bg-gray-500" onClick={onSkipAction}>

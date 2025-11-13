@@ -40,11 +40,55 @@ export default function GamePage() {
     { id: string; playerId: number; playerName: string; message: string }[]
   >([]);
   const [chatInput, setChatInput] = useState<string>("");
+  const [wolfSelections, setWolfSelections] = useState<Record<number, number | null>>({});
+  const [nightActionsSubmitted, setNightActionsSubmitted] = useState<Set<number>>(new Set());
 
   // Derived
   const isAlive = useMemo(() => (session ? session.alivePlayers.includes(me) : true), [session, me]);
-  const canAct = phase === GamePhaseEnum.NIGHT && isAlive && !submitted && (role?.priority ?? 0) > 0;
+  const isWerewolf = role?.team === "werewolf";
+
+  // Check if higher priority roles have acted (priority system: higher number = acts first)
+  const canActBasedOnPriority = useMemo(() => {
+    if (!role || !session || !players.length || !allCharacters.length) return false;
+    const myPriority = role.priority;
+    if (myPriority === 0) return false; // No night action
+
+    // Get all alive players with higher priority than me
+    const higherPriorityPlayers = session.alivePlayers
+      .filter((pIdx) => pIdx !== me)
+      .map((pIdx) => {
+        const playerRole = allCharacters.find((c) => c.id === players[pIdx]?.role);
+        return { idx: pIdx, priority: playerRole?.priority || 0 };
+      })
+      .filter((p) => p.priority > myPriority);
+
+    // All higher priority players must have acted
+    return higherPriorityPlayers.every((p) => nightActionsSubmitted.has(p.idx));
+  }, [role, session, players, allCharacters, me, nightActionsSubmitted]);
+
+  const canAct =
+    phase === GamePhaseEnum.NIGHT && isAlive && !submitted && (role?.priority ?? 0) > 0 && canActBasedOnPriority;
   const canVote = phase === GamePhaseEnum.VOTING && isAlive && !submitted;
+
+  // Get all werewolf player indices
+  const werewolves = useMemo(() => {
+    if (!isWerewolf || !players.length || !allCharacters.length) return [];
+    return players
+      .map((p, idx) => ({ idx, role: allCharacters.find((c) => c.id === p.role) }))
+      .filter((p) => p.role?.team === "werewolf")
+      .map((p) => p.idx);
+  }, [isWerewolf, players, allCharacters]);
+
+  // Check if all wolves have selected the same target
+  const wolfConsensus = useMemo(() => {
+    if (!isWerewolf || werewolves.length === 0) return true;
+    const selections = Object.entries(wolfSelections)
+      .filter(([playerId]) => werewolves.includes(Number(playerId)))
+      .map(([, targetId]) => targetId);
+    if (selections.length < werewolves.length) return false;
+    const firstTarget = selections[0];
+    return selections.every((t) => t === firstTarget) && firstTarget !== null;
+  }, [isWerewolf, werewolves, wolfSelections]);
 
   const phaseLabel = useMemo(() => {
     if (winner) return "Game Over";
@@ -89,11 +133,13 @@ export default function GamePage() {
 
   useEffect(() => {
     const code = localStorage.getItem(LocalStorageKeyEnum.ROOM_CODE);
-    if (code && !room) fetchState(code);
-    if (room) fetchState(room.roomCode);
-  }, [room, fetchState]);
+    if (code) fetchState(code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
+    const roomCode = localStorage.getItem(LocalStorageKeyEnum.ROOM_CODE);
+
     socketService.onPhaseChanged((...args) => {
       const data = args[0] as { phase: GamePhaseEnum; dayNumber: number };
       setPhase(data.phase);
@@ -101,13 +147,15 @@ export default function GamePage() {
       setSubmitted(false);
       setTarget(null);
       setChatMessages([]);
+      setWolfSelections({}); // Reset wolf selections on phase change
+      setNightActionsSubmitted(new Set()); // Reset night actions tracking
       addLog(`Phase → ${data.phase} (Day ${data.dayNumber})`);
-      if (room) fetchState(room.roomCode);
+      if (roomCode) fetchState(roomCode);
     });
     socketService.onPlayerEliminated((...args) => {
       const data = args[0] as { playerId: number };
       addLog(`Player ${data.playerId + 1} eliminated`);
-      if (room) fetchState(room.roomCode);
+      if (roomCode) fetchState(roomCode);
     });
     socketService.onGameEnded((...args) => {
       const data = args[0] as { winner: string };
@@ -116,11 +164,17 @@ export default function GamePage() {
     });
     socketService.onActionSubmitted((...args) => {
       const data = args[0] as { playerId: number };
-      addLog(`Player ${data.playerId + 1} submitted action`);
+      // Track that this player has acted (for priority system)
+      setNightActionsSubmitted((prev) => new Set(prev).add(data.playerId));
+      // Don't reveal player identity in logs
+      addLog(`A player submitted their night action`);
     });
-    socketService.onVoteSubmitted((...args) => {
-      const data = args[0] as { playerId: number };
-      addLog(`Player ${data.playerId + 1} voted`);
+    socketService.onVoteSubmitted(() => {
+      addLog(`A player has voted`);
+    });
+    socketService.onWolfSelection((...args) => {
+      const data = args[0] as { playerId: number; targetId: number | null };
+      setWolfSelections((prev) => ({ ...prev, [data.playerId]: data.targetId }));
     });
     socketService.onChatMessage((...args) => {
       const data = args[0] as { playerId: number; playerName: string; message: string };
@@ -136,16 +190,30 @@ export default function GamePage() {
       ]);
     });
     return () => socketService.removeAllListeners();
-  }, [room, fetchState, addLog]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Notify other wolves when this wolf selects a target
+  useEffect(() => {
+    if (isWerewolf && room && phase === GamePhaseEnum.NIGHT) {
+      socketService.emitWolfSelect(room.roomCode, me, target);
+      setWolfSelections((prev) => ({ ...prev, [me]: target }));
+    }
+  }, [target, isWerewolf, room, me, phase]);
 
   const submitNightAction = async () => {
     if (!session || !room || target === null) {
       toast.warning("Select a target first");
       return;
     }
+    // Wolves must have consensus
+    if (isWerewolf && !wolfConsensus) {
+      toast.warning("All werewolves must select the same target");
+      return;
+    }
     try {
       const api = getApiService();
-      const res: ApiResponse = await api.post("/api/game/action", {
+      const res: ApiResponse<{ allActionsComplete?: boolean }> = await api.post("/api/game/action", {
         sessionId: session.id,
         playerId: me,
         action: "target",
@@ -156,6 +224,14 @@ export default function GamePage() {
       setTarget(null);
       socketService.emitActionSubmitted(room.roomCode, me);
       toast.success("Action submitted");
+
+      // Auto-transition to day if all night actions are complete
+      if (res.data?.allActionsComplete) {
+        const isAdmin = players[me]?.isAdmin;
+        if (isAdmin) {
+          setTimeout(() => advancePhase(), 2000); // Small delay before auto-advance
+        }
+      }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "Submit failed";
       toast.error(errorMessage);
@@ -275,30 +351,54 @@ export default function GamePage() {
               {players.map((p, idx) => {
                 const showActualRole = !!(winner && room?.isShowRole);
                 const actualCharacter = allCharacters.find((c) => c.id === p.role);
+                const isWolf = werewolves.includes(idx);
+                const wolfSelectedThis = wolfSelections[idx];
+
+                // Wolves can see each other's roles during night phase
+                const shouldRevealWolf = isWerewolf && isWolf && phase === GamePhaseEnum.NIGHT;
+
                 const displayCharacter =
                   showActualRole && actualCharacter
                     ? actualCharacter
-                    : {
-                        ...(role as CharacterType),
-                        name: p.name ?? "Waiting",
-                      };
+                    : shouldRevealWolf && actualCharacter
+                      ? actualCharacter
+                      : {
+                          id: 0,
+                          name: p.name ?? "Waiting",
+                          avatar: "/images/characters/user.jpg",
+                          description: "Hidden",
+                          team: "villager" as const,
+                          priority: 0,
+                        };
 
                 const playerKey = `${room.id}-player-${p.name || "empty"}-${p.role}-${idx}`;
 
+                // Show which target this wolf selected
+                const selectedTarget =
+                  isWerewolf && isWolf && wolfSelectedThis !== undefined && wolfSelectedThis !== null
+                    ? players[wolfSelectedThis]?.name || `Player ${wolfSelectedThis + 1}`
+                    : null;
+
                 return (
-                  <PlayerCard
-                    key={playerKey}
-                    player={p}
-                    index={idx}
-                    currentPlayerId={me}
-                    isAlive={alive(idx)}
-                    isSelectable={selectable(idx)}
-                    isSelected={target === idx}
-                    character={displayCharacter}
-                    actualCharacter={actualCharacter}
-                    showActualRole={showActualRole}
-                    onSelect={() => selectable(idx) && setTarget(idx)}
-                  />
+                  <div key={playerKey} className="relative">
+                    <PlayerCard
+                      player={p}
+                      index={idx}
+                      currentPlayerId={me}
+                      isAlive={alive(idx)}
+                      isSelectable={selectable(idx)}
+                      isSelected={target === idx}
+                      character={displayCharacter}
+                      actualCharacter={actualCharacter}
+                      showActualRole={showActualRole || shouldRevealWolf}
+                      onSelect={() => selectable(idx) && setTarget(idx)}
+                    />
+                    {selectedTarget && idx !== me && (
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap">
+                        → {selectedTarget}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -325,16 +425,38 @@ export default function GamePage() {
                 );
               }
               if (phase === GamePhaseEnum.NIGHT) {
-                if (canAct) {
-                  return (
-                    <NightPhaseActions
-                      canAct={canAct}
-                      submitted={submitted}
-                      target={target}
-                      onSubmitAction={submitNightAction}
-                      onSkipAction={skipNightAction}
-                    />
-                  );
+                if ((role?.priority ?? 0) > 0 && !submitted) {
+                  if (!canActBasedOnPriority) {
+                    return (
+                      <div className="p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
+                        <p className="text-purple-200 text-sm">⏳ Waiting for higher priority roles to act first...</p>
+                        <p className="text-purple-300 text-xs mt-2">
+                          Your role acts after other roles complete their actions.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  if (canAct) {
+                    const wolfHint =
+                      isWerewolf && !wolfConsensus
+                        ? "⚠️ All werewolves must select the same target to proceed"
+                        : isWerewolf && wolfConsensus
+                          ? "✓ All werewolves agree on the target"
+                          : undefined;
+
+                    return (
+                      <NightPhaseActions
+                        canAct={canAct}
+                        submitted={submitted}
+                        target={target}
+                        onSubmitAction={submitNightAction}
+                        onSkipAction={skipNightAction}
+                        submitDisabled={isWerewolf && !wolfConsensus}
+                        hint={wolfHint}
+                      />
+                    );
+                  }
                 }
                 return <p className="text-orange-100/80 text-sm">Waiting for night actions...</p>;
               }

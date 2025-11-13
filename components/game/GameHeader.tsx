@@ -34,7 +34,9 @@ export default function GameHeader({
           )}
         </div>
         <div className="flex items-center gap-4">
-          <Timer initialTime={timerLimit} key={`${phase}-${day}`} onTimeEnd={onTimerEnd} className="w-24 h-24" />
+          {phase !== GamePhaseEnum.NIGHT && (
+            <Timer initialTime={timerLimit} key={`${phase}-${day}`} onTimeEnd={onTimerEnd} className="w-24 h-24" />
+          )}
           <button
             type="button"
             onClick={onLeaveGame}

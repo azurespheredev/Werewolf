@@ -33,6 +33,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const players = playersData.players || playersData;
     const selectedRoles = playersData.selectedRoles || [];
 
+    // Check if all players have joined
+    const allPlayersJoined = players.every((p: { name: string | null }) => p.name !== null);
+    if (!allPlayersJoined) {
+      return NextResponse.json(
+        { success: false, message: "All players must join before starting the game" },
+        { status: 400 }
+      );
+    }
+
     // Assign roles to players
     const shuffledRoles = shuffleArray(selectedRoles);
     const playersWithRoles = players.map(

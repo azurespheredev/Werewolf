@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import CharacterCard from "@/components/shared/CharacterCard";
 import type { CharacterType } from "@/lib/types";
 
@@ -18,7 +17,7 @@ export default function RolePanel({ role, isRevealed, onToggleReveal }: RolePane
         <CharacterCard character={role} isRevealed={isRevealed} onClick={onToggleReveal} className="w-48 h-64" />
       </div>
       {isRevealed && (
-        <div className="mt-4 space-y-2">
+        <div className="mt-8 space-y-2">
           <p className="text-orange-50 font-semibold">{role.name}</p>
           <p className="text-orange-100/80 text-sm">{role.description}</p>
           <p className="text-orange-200 text-xs capitalize">Team: {role.team}</p>

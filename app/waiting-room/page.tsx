@@ -45,7 +45,40 @@ export default function WaitingRoomPage() {
         const apiService = getApiService();
         const response: ApiResponse<RoomType> = await apiService.get(`/api/rooms/${roomCode}`);
         if (response.success && response.data) {
-          setRoom(response.data);
+          // Normalize players: handle string JSON and coerce role ids to numbers
+          const roomData = { ...response.data } as RoomType;
+          let playersField: unknown = roomData.players as unknown;
+          let selectedRoles: number[] = [];
+          if (typeof playersField === "string") {
+            try {
+              const parsed = JSON.parse(playersField);
+              if (Array.isArray(parsed?.players)) {
+                playersField = parsed.players;
+                selectedRoles = parsed.selectedRoles || [];
+              } else if (Array.isArray(parsed)) {
+                playersField = parsed;
+              } else {
+                playersField = [];
+              }
+            } catch {
+              playersField = [];
+            }
+          }
+          if (!Array.isArray(playersField)) {
+            playersField = [];
+          }
+          const normalizedPlayers = (playersField as Array<Partial<PlayerType>>).map((p) => ({
+            role: typeof p.role === "string" ? parseInt(p.role as unknown as string, 10) : (p.role as number),
+            name: (p.name ?? null) as string | null,
+            isAdmin: Boolean(p.isAdmin),
+            isAlive: Boolean(p.isAlive),
+            isOnline: Boolean(p.isOnline),
+            isReady: Boolean(p.isReady),
+          })) as PlayerType[];
+
+          roomData.players = normalizedPlayers;
+          roomData.selectedRoles = selectedRoles;
+          setRoom(roomData);
           return;
         }
         toast.error("Room not found");
@@ -72,7 +105,8 @@ export default function WaitingRoomPage() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [fetchCharacters, fetchRoomData, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!room) return;
@@ -85,6 +119,12 @@ export default function WaitingRoomPage() {
       router.push(RouteEnum.GAME);
     });
 
+    // Listen for player joined events
+    socketService.onPlayerJoined(() => {
+      // Refresh room data when a player joins
+      fetchRoomData(room.roomCode);
+    });
+
     // Listen for player left events
     socketService.onPlayerLeft(() => {
       // Refresh room data when a player leaves
@@ -94,16 +134,15 @@ export default function WaitingRoomPage() {
     return () => {
       socketService.removeAllListeners();
     };
-  }, [room, router, fetchRoomData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.roomCode, router]);
 
   const handleStartGame = async () => {
     if (!room) return;
 
     try {
       const apiService = getApiService();
-      const response: ApiResponse = await apiService.post("/api/game/start", {
-        roomId: room.id,
-      });
+      const response: ApiResponse = await apiService.post(`/api/rooms/${room.roomCode}/start`, {});
 
       if (response.success) {
         toast.success("Game starting!");
@@ -123,13 +162,15 @@ export default function WaitingRoomPage() {
 
     try {
       const apiService = getApiService();
+      // We need the player's name for backend validation used in join logic; reconstruct from room state.
+      const playerName = room.players[playerId]?.name || "";
       const response: ApiResponse = await apiService.post("/api/rooms/leave", {
         roomCode: room.roomCode,
         playerId: playerId.toString(),
+        playerName, // provide for strict validators
       });
 
       if (response.success) {
-        // Emit player left event to notify other players
         socketService.emitPlayerLeft(room.roomCode, playerId);
         socketService.leaveRoom(room.roomCode);
 
@@ -139,12 +180,17 @@ export default function WaitingRoomPage() {
         toast.success("Left room successfully");
         router.push(RouteEnum.HOME);
       } else {
+        // If backend responds with player name required, fall back to local removal anyway.
         toast.error(response.message || "Failed to leave room");
+        if (response.message?.toLowerCase().includes("player name")) {
+          localStorage.removeItem(LocalStorageKeyEnum.ROOM_CODE);
+          localStorage.removeItem(LocalStorageKeyEnum.PLAYER_ID);
+          router.push(RouteEnum.HOME);
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to leave room";
       toast.error(errorMessage);
-      // Still navigate away even if the API call fails
       localStorage.removeItem(LocalStorageKeyEnum.ROOM_CODE);
       localStorage.removeItem(LocalStorageKeyEnum.PLAYER_ID);
       router.push(RouteEnum.HOME);
@@ -164,7 +210,10 @@ export default function WaitingRoomPage() {
   const filledSlots = room.players.filter((p) => p.name !== null).length;
 
   return (
-    <BackgroundBox src="/images/bg_home.jpg" className="flex flex-col items-center w-full h-screen overflow-y-auto p-8">
+    <BackgroundBox
+      src="/images/village_daylight.jpg"
+      className="flex flex-col items-center w-full h-screen overflow-y-auto p-8"
+    >
       <div className="w-full max-w-6xl">
         <div className="flex justify-between items-center mb-6">
           <Button className="px-6 py-2 text-base" onClick={() => setIsLeaveDialogOpen(true)}>
@@ -198,16 +247,14 @@ export default function WaitingRoomPage() {
                     key={playerKey}
                     className={`relative bg-black/40 rounded-lg p-3 border-2 transition-all ${borderClass}`}
                   >
-                    <div className="relative w-full aspect-square mb-2 rounded overflow-hidden">
-                      <div className="w-full h-full bg-gray-700">
-                        <Image
-                          src="/images/characters/user.jpg"
-                          alt="Hidden player"
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                          className="object-cover opacity-30"
-                        />
-                      </div>
+                    <div className="relative w-full aspect-square mb-2 rounded overflow-hidden bg-gray-700">
+                      <Image
+                        src="/images/characters/user.jpg"
+                        alt="Hidden player"
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                        className="object-cover opacity-30"
+                      />
                       <div className="absolute inset-0 flex items-center justify-center">
                         {player.name ? (
                           <span className="text-white font-bold text-lg text-center px-2">{player.name}</span>
@@ -263,7 +310,7 @@ export default function WaitingRoomPage() {
             {isAdmin && (
               <div className="mt-6">
                 <Button className="w-full px-6 py-3" onClick={handleStartGame} disabled={!allPlayersJoined}>
-                  {allPlayersJoined ? "Start Game" : "Waiting for Players..."}
+                  {allPlayersJoined ? "Start Game" : "Waiting..."}
                 </Button>
                 {!allPlayersJoined && (
                   <p className="text-orange-300 text-sm text-center mt-2">All players must join before starting</p>
@@ -284,9 +331,17 @@ export default function WaitingRoomPage() {
           <p className="text-orange-200 text-sm mb-4">Role assignments are hidden until the game starts</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {(() => {
+              // Use selectedRoles if available, otherwise fallback to player roles
+              const rolesList =
+                room.selectedRoles && room.selectedRoles.length > 0
+                  ? room.selectedRoles
+                  : room.players.map((p) => p.role).filter((r) => r !== null && r !== undefined);
+
               const roleCounts = new Map<number, number>();
-              room.players.forEach((player) => {
-                roleCounts.set(player.role, (roleCounts.get(player.role) || 0) + 1);
+              rolesList.forEach((roleId) => {
+                if (roleId !== null && roleId !== undefined) {
+                  roleCounts.set(roleId, (roleCounts.get(roleId) || 0) + 1);
+                }
               });
 
               return Array.from(roleCounts.entries()).map(([roleId, count]) => {
