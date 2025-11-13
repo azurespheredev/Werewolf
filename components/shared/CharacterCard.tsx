@@ -7,6 +7,7 @@ import { CharacterType } from "@/lib/types";
 interface CharacterCardProps {
   character: CharacterType | null;
   isRevealed?: boolean;
+  isSmall?: boolean;
   className?: string;
   onClick?: () => void;
   isSelected?: boolean;
@@ -86,7 +87,6 @@ export default function CharacterCard({
               className="object-cover"
               priority={false}
             />
-            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
             <div className="absolute top-2 left-0 right-0 text-center text-white text-2xl px-2">???</div>
           </div>
 
@@ -106,10 +106,6 @@ export default function CharacterCard({
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12vw"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent" />
-              <div className="absolute top-2 left-0 right-0 text-center text-white text-2xl px-2">
-                {character.name}
-              </div>
             </div>
           )}
         </div>

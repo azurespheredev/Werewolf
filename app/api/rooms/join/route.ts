@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     const { roomCode, username } = body;
 
     if (!roomCode || !username) {
-      return NextResponse.json(
-        { success: false, message: "roomCode and username are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "roomCode and username are required" }, { status: 400 });
     }
 
     const room = await prisma.rooms.findUnique({
@@ -72,11 +69,17 @@ export async function POST(request: NextRequest) {
 
     // Preserve metadata (selectedRoles) if it exists
     const originalData =
-      typeof room.players === "string" ? (() => { try { return JSON.parse(room.players as string); } catch { return null; } })() : null;
+      typeof room.players === "string"
+        ? (() => {
+            try {
+              return JSON.parse(room.players as string);
+            } catch {
+              return null;
+            }
+          })()
+        : null;
     const updatedPlayersData =
-      originalData && originalData.selectedRoles
-        ? { players, selectedRoles: originalData.selectedRoles }
-        : players;
+      originalData && originalData.selectedRoles ? { players, selectedRoles: originalData.selectedRoles } : players;
 
     const updatedRoom = await prisma.rooms.update({
       where: { roomCode },
