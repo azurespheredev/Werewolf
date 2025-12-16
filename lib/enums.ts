@@ -7,7 +7,6 @@ export enum RouteEnum {
 }
 
 export enum LocalStorageKeyEnum {
-  SERVER_ADDRESS = "server_address",
   TIMER_LIMIT = "timer_limit",
   USERNAME = "username",
   ROOM_CODE = "room_code",

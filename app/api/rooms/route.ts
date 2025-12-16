@@ -3,16 +3,52 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Optional filter: /api/rooms?active=true
+  const { searchParams } = new URL(request.url);
+  const activeOnly = searchParams.get("active") === "true";
   try {
     const rooms = await prisma.rooms.findMany({
       where: {
-        isActive: true,
+        isActive: activeOnly ? true : undefined,
         gameStarted: false,
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ success: true, data: rooms });
+
+    // Normalize each room's players field
+    const normalizedRooms = rooms.map((room) => {
+      let playersField: unknown = room.players as unknown;
+      if (typeof playersField === "string") {
+        try {
+          const parsed = JSON.parse(playersField);
+          if (Array.isArray(parsed?.players)) {
+            playersField = parsed.players;
+          } else if (Array.isArray(parsed)) {
+            playersField = parsed;
+          } else {
+            playersField = [];
+          }
+        } catch {
+          playersField = [];
+        }
+      }
+      if (!Array.isArray(playersField)) {
+        playersField = [];
+      }
+
+      const players = (playersField as Array<{ role?: string | number | null; [key: string]: unknown }>).map((p) => ({
+        ...p,
+        role: typeof p.role === "string" ? parseInt(p.role, 10) : p.role,
+      }));
+
+      return {
+        ...room,
+        players,
+      };
+    });
+
+    return NextResponse.json({ success: true, data: normalizedRooms });
   } catch (error) {
     console.error("Error fetching rooms:", error);
     return NextResponse.json({ success: false, message: "Failed to fetch rooms" }, { status: 500 });

@@ -1,21 +1,24 @@
 import { io, Socket } from "socket.io-client";
-import { GamePhaseEnum } from "../lib/enums";
+import { GamePhaseEnum } from "@/lib/enums";
 
 type SocketCallback = (...args: unknown[]) => void;
 
 class SocketService {
   private socket: Socket | null = null;
-  private serverUrl: string = "";
 
-  connect(serverUrl: string) {
-    if (this.socket?.connected) {
-      return;
-    }
+  connect() {
+    if (typeof window === "undefined") return;
+    if (this.socket?.connected) return;
 
-    this.serverUrl = serverUrl;
-    this.socket = io(serverUrl, {
+    const url = process.env.NEXT_PUBLIC_SOCKET_URL || undefined;
+    const options: Partial<import("socket.io-client").ManagerOptions & import("socket.io-client").SocketOptions> = {
       transports: ["websocket", "polling"],
-    });
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 500,
+      timeout: 10000,
+    };
+    this.socket = url ? io(url, options) : io(options);
 
     this.socket.on("connect", () => {
       console.log("✅ Connected to WebSocket server");
@@ -168,6 +171,19 @@ class SocketService {
   onChatMessage(callback: SocketCallback) {
     if (this.socket) {
       this.socket.on("chat-message", callback);
+    }
+  }
+
+  // Night coordination
+  emitWolfSelect(roomCode: string, playerId: number, targetId: number | null) {
+    if (this.socket) {
+      this.socket.emit("wolf-select", { roomCode, playerId, targetId });
+    }
+  }
+
+  onWolfSelection(callback: SocketCallback) {
+    if (this.socket) {
+      this.socket.on("wolf-selection", callback);
     }
   }
 

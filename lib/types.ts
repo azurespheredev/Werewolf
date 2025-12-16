@@ -1,4 +1,4 @@
-import { GamePhaseEnum } from "./enums";
+import { GamePhaseEnum } from "@/lib/enums";
 
 export interface CharacterType {
   id: number;
@@ -22,6 +22,7 @@ export interface RoomType {
   id: number;
   roomCode: string;
   players: PlayerType[];
+  selectedRoles?: number[];
   timerLimit: number;
   isShowRole: boolean;
   isActive: boolean;

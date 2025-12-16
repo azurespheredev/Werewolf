@@ -1,23 +1,31 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
-import StoreProvider from "../contexts/StoreProvider";
+import StoreProvider from "@/contexts/StoreProvider";
 import { Bounce, ToastContainer } from "react-toastify";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const barElLoro = localFont({
+  src: "./fonts/Bar el Loro.otf",
+  variable: "--font-bar-el-loro",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const reward = localFont({
+  src: "./fonts/Reward.ttf",
+  variable: "--font-reward",
+});
+
+const topSecret = localFont({
+  src: "./fonts/Top Secret.ttf",
+  variable: "--font-top-secret",
 });
 
 export const metadata: Metadata = {
   title: "Werewolf Game",
   description: "Online multiplayer Werewolf game",
+  icons: {
+    icon: "/images/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -26,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className={`${barElLoro.variable} ${reward.variable} ${topSecret.variable}`}>
+      <body className={`${barElLoro.className} antialiased`}>
         <StoreProvider>
           {children}
           <ToastContainer

@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { GamePhaseEnum } from "../../lib/enums";
+import { GamePhaseEnum } from "@/lib/enums";
 
 interface AnimatedBackgroundProps {
   phase: GamePhaseEnum;

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { CharacterType, PlayerType } from "../../lib/types";
+import { CharacterType, PlayerType } from "@/lib/types";
 
 interface PlayerCardProps {
   player: PlayerType;

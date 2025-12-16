@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "ws": "node server/socketServer.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "format": "prettier --write .",
@@ -26,6 +27,7 @@
     "react-redux": "^9.2.0",
     "react-toastify": "^11.0.5",
     "socket.io-client": "^4.8.1",
+    "socket.io": "^4.8.1",
     "uuid": "^11.1.0",
     "zod": "^3.25.67"
   },

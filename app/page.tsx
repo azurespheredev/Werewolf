@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import BackgroundBox from "../components/shared/BackgroundBox";
-import Button from "../components/shared/Button";
-import { RouteEnum } from "../lib/enums";
+import BackgroundBox from "@/components/shared/BackgroundBox";
+import Button from "@/components/shared/Button";
+import { RouteEnum } from "@/lib/enums";
 
 export default function HomePage() {
   return (
@@ -20,10 +20,10 @@ export default function HomePage() {
         />
         <div className="flex flex-col gap-6 w-80">
           <Link href={RouteEnum.CREATE_ROOM}>
-            <Button className="w-60 px-8 py-4 anim-slide-to-top">Create Room</Button>
+            <Button className="w-full px-8 py-4 anim-slide-to-top">Create Room</Button>
           </Link>
           <Link href={RouteEnum.JOIN_ROOM}>
-            <Button className="w-60 px-8 py-4 anim-slide-to-top">Join Room</Button>
+            <Button className="w-full px-8 py-4 anim-slide-to-top">Join Room</Button>
           </Link>
         </div>
       </div>

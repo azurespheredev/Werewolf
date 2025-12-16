@@ -4,14 +4,14 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "react-toastify";
-import BackgroundBox from "../../components/shared/BackgroundBox";
-import Button from "../../components/shared/Button";
-import Input from "../../components/shared/Input";
-import CharacterCard from "../../components/shared/CharacterCard";
-import { configureApiService, getApiService } from "../../services/apiService";
-import { CharacterType, ApiResponse, RoomType } from "../../lib/types";
-import { LocalStorageKeyEnum, RouteEnum } from "../../lib/enums";
-import { PLAYER_ROLES_DATA, SERVER_PORT } from "../../lib/constants";
+import BackgroundBox from "@/components/shared/BackgroundBox";
+import Button from "@/components/shared/Button";
+import Input from "@/components/shared/Input";
+import CharacterCard from "@/components/shared/CharacterCard";
+import { getApiService } from "@/services/apiService";
+import { CharacterType, ApiResponse, RoomType } from "@/lib/types";
+import { LocalStorageKeyEnum, RouteEnum } from "@/lib/enums";
+import { PLAYER_ROLES_DATA } from "@/lib/constants";
 
 export default function CreateRoomPage() {
   const [characters, setCharacters] = useState<CharacterType[]>([]);
@@ -29,10 +29,6 @@ export default function CreateRoomPage() {
   useEffect(() => {
     const fetchCharacters = async () => {
       try {
-        const savedAddress = localStorage.getItem(LocalStorageKeyEnum.SERVER_ADDRESS);
-        if (savedAddress) {
-          configureApiService(`${savedAddress}:${SERVER_PORT}`);
-        }
         const apiService = getApiService();
         const response: ApiResponse<CharacterType[]> = await apiService.get("/api/roles");
         if (response.success && response.data) {
@@ -51,17 +47,15 @@ export default function CreateRoomPage() {
     }
   }, []);
 
-  // Auto-select roles based on player count
+  // Auto-select roles based on player count (only depend on playerCount, not characters array)
   useEffect(() => {
-    if (playerCount >= 4 && playerCount <= 23 && characters.length > 0) {
+    if (playerCount >= 4 && playerCount <= 23) {
       const rolesForCount = PLAYER_ROLES_DATA[playerCount - 4];
       if (rolesForCount) {
-        // Ensure unique role IDs only
-        const uniqueRoles = Array.from(new Set(rolesForCount));
-        setSelectedRoles(uniqueRoles);
+        setSelectedRoles(rolesForCount);
       }
     }
-  }, [playerCount, characters]);
+  }, [playerCount]);
 
   // Drag handlers for character cards
   const handleDragStartFromGrid = (roleId: number) => {
@@ -151,9 +145,10 @@ export default function CreateRoomPage() {
     try {
       setIsLoading(true);
       const apiService = getApiService();
-      const response: ApiResponse<RoomType> = await apiService.post("/api/rooms/create", {
-        username: username.trim(),
-        roles: selectedRoles,
+      const response: ApiResponse<RoomType> = await apiService.post("/api/rooms", {
+        hostName: username.trim(),
+        playerCount,
+        selectedRoles,
         timerLimit,
         isShowRole,
       });
@@ -174,7 +169,7 @@ export default function CreateRoomPage() {
   }, [username, selectedRoles, playerCount, timerLimit, isShowRole, router]);
 
   return (
-    <BackgroundBox src="/images/bg_home.jpg" className="flex flex-col items-center w-full h-screen overflow-y-auto p-8">
+    <BackgroundBox src="/images/village_daylight.jpg" className="flex flex-col items-center w-full h-screen overflow-y-auto p-8">
       <div className="w-full max-w-6xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import BackgroundBox from "./BackgroundBox";
+import BackgroundBox from "@/components/shared/BackgroundBox";
 
 interface ModalProps {
   isOpen: boolean;

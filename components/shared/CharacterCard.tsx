@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { CharacterType } from "../../lib/types";
+import { CharacterType } from "@/lib/types";
 
 interface CharacterCardProps {
   character: CharacterType | null;
   isRevealed?: boolean;
+  isSmall?: boolean;
   className?: string;
   onClick?: () => void;
   isSelected?: boolean;
@@ -21,7 +22,8 @@ export default function CharacterCard({
   isSelected = false,
   showDetails = false,
 }: CharacterCardProps) {
-  const [isFlipped] = useState(isRevealed);
+  // Use the prop directly instead of local state so it responds to parent updates
+  const isFlipped = isRevealed;
 
   const handleClick = () => {
     if (onClick) {
@@ -77,9 +79,15 @@ export default function CharacterCard({
               backfaceVisibility: "hidden",
             }}
           >
-            <Image src="/images/characters/user.jpg" alt="Hidden" fill className="object-cover" />
-            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute bottom-2 left-0 right-0 text-center text-white font-bold text-sm px-2">???</div>
+            <Image
+              src="/images/characters/user.jpg"
+              alt="Hidden"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12vw"
+              className="object-cover"
+              priority={false}
+            />
+            <div className="absolute top-2 left-0 right-0 text-center text-white text-2xl px-2">???</div>
           </div>
 
           {/* Back - Revealed Character */}
@@ -91,11 +99,13 @@ export default function CharacterCard({
                 transform: "rotateY(180deg)",
               }}
             >
-              <Image src={character.avatar} alt={character.name} fill className="object-cover" />
-              <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent" />
-              <div className="absolute bottom-2 left-0 right-0 text-center text-white font-bold text-sm px-2">
-                {character.name}
-              </div>
+              <Image
+                src={character.avatar}
+                alt={character.name}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12vw"
+                className="object-cover"
+              />
             </div>
           )}
         </div>
