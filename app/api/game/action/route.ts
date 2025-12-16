@@ -65,10 +65,18 @@ export async function POST(request: NextRequest) {
       const actedPlayers = Object.keys(nightActions).map(Number);
       const allActed = rolesWithActions.every((pIdx) => actedPlayers.includes(pIdx));
 
+      console.log("Night action check:", {
+        alivePlayers,
+        rolesWithActions,
+        actedPlayers,
+        allActed,
+      });
+
       return NextResponse.json({
         success: true,
         message: "Action recorded",
         allActionsComplete: allActed,
+        roomCode: room.roomCode,
       });
     }
 

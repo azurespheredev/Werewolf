@@ -42,6 +42,7 @@ export default function GamePage() {
   const [chatInput, setChatInput] = useState<string>("");
   const [wolfSelections, setWolfSelections] = useState<Record<number, number | null>>({});
   const [nightActionsSubmitted, setNightActionsSubmitted] = useState<Set<number>>(new Set());
+  const [revealedTarget, setRevealedTarget] = useState<{ playerId: number; role: CharacterType } | null>(null);
 
   // Derived
   const isAlive = useMemo(() => (session ? session.alivePlayers.includes(me) : true), [session, me]);
@@ -149,6 +150,7 @@ export default function GamePage() {
       setChatMessages([]);
       setWolfSelections({}); // Reset wolf selections on phase change
       setNightActionsSubmitted(new Set()); // Reset night actions tracking
+      setRevealedTarget(null); // Reset revealed target
       addLog(`Phase → ${data.phase} (Day ${data.dayNumber})`);
       if (roomCode) fetchState(roomCode);
     });
@@ -221,6 +223,18 @@ export default function GamePage() {
       });
       if (!res.success) throw new Error(res.message || "Failed");
       setSubmitted(true);
+      
+      // If Seer, reveal the target's role
+      if (role?.name.toLowerCase().includes('seer') && target !== null) {
+        const targetRole = allCharacters.find((c) => c.id === players[target]?.role);
+        if (targetRole) {
+          setRevealedTarget({ playerId: target, role: targetRole });
+          toast.success(`${players[target]?.name || `Player ${target + 1}`} is a ${targetRole.name}!`, {
+            autoClose: 5000,
+          });
+        }
+      }
+      
       setTarget(null);
       socketService.emitActionSubmitted(room.roomCode, me);
       toast.success("Action submitted");
@@ -229,7 +243,13 @@ export default function GamePage() {
       if (res.data?.allActionsComplete) {
         const isAdmin = players[me]?.isAdmin;
         if (isAdmin) {
-          setTimeout(() => advancePhase(), 2000); // Small delay before auto-advance
+          // Admin auto-advances the phase after a short delay
+          setTimeout(() => {
+            advancePhase();
+          }, 2000);
+        } else {
+          // Non-admins will receive the phase change via socket event from admin
+          addLog("All night actions complete. Waiting for phase transition...");
         }
       }
     } catch (e) {
@@ -457,6 +477,23 @@ export default function GamePage() {
                       />
                     );
                   }
+                }
+                if (submitted && revealedTarget && role?.name.toLowerCase().includes('seer')) {
+                  return (
+                    <div className="space-y-3">
+                      <div className="p-4 bg-green-900/30 rounded-lg border border-green-500/30">
+                        <p className="text-green-200 text-sm">✓ Action submitted. Waiting for other players...</p>
+                      </div>
+                      <div className="p-4 bg-blue-900/30 rounded-lg border border-blue-500/30">
+                        <p className="text-blue-200 text-sm font-semibold mb-2">🔮 Vision Revealed:</p>
+                        <p className="text-blue-100 text-sm">
+                          {players[revealedTarget.playerId]?.name || `Player ${revealedTarget.playerId + 1}`} is a{' '}
+                          <span className="font-bold text-blue-300">{revealedTarget.role.name}</span>
+                        </p>
+                        <p className="text-blue-300 text-xs mt-2">Team: {revealedTarget.role.team}</p>
+                      </div>
+                    </div>
+                  );
                 }
                 return <p className="text-orange-100/80 text-sm">Waiting for night actions...</p>;
               }

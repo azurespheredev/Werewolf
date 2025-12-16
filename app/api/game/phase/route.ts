@@ -28,6 +28,47 @@ export async function POST(request: NextRequest) {
     // We will also resolve votes when transitioning from voting -> night
     switch (session.phase) {
       case "night": {
+        // Resolve night actions (wolf kills, etc.)
+        let nightActions: Record<string, { action: string; target: number | null }> = {};
+        try {
+          nightActions = JSON.parse(session.nightActions as unknown as string);
+        } catch {
+          nightActions = {};
+        }
+
+        let alive: number[] = [];
+        let dead: number[] = [];
+        try {
+          alive = JSON.parse(session.alivePlayers as unknown as string) as number[];
+        } catch {
+          alive = [];
+        }
+        try {
+          dead = JSON.parse(session.deadPlayers as unknown as string) as number[];
+        } catch {
+          dead = [];
+        }
+
+        // Process wolf kills (assuming wolves have priority and target same player)
+        const wolfActions = Object.entries(nightActions).filter(([, action]) => action.action === "target");
+        if (wolfActions.length > 0) {
+          const wolfTarget = wolfActions[0][1].target;
+          if (wolfTarget !== null && alive.includes(wolfTarget)) {
+            alive = alive.filter((p) => p !== wolfTarget);
+            dead = Array.from(new Set([...dead, wolfTarget]));
+          }
+        }
+
+        // Clear night actions and update alive/dead players
+        await prisma.gameSession.update({
+          where: { id: sessionId },
+          data: {
+            alivePlayers: JSON.stringify(alive),
+            deadPlayers: JSON.stringify(dead),
+            nightActions: JSON.stringify({}),
+          },
+        });
+
         nextPhase = "day";
         break;
       }
