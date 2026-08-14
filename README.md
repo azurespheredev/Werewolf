@@ -1,3 +1,5 @@
+
+
 # Werewolf Game - Next.js Web Application
 
 Migrated from Electron desktop app to Next.js web application.
@@ -22,11 +24,11 @@ To complete the migration, you need to create these page files by copying from t
 
 ```bash
 # Create these files in werewolf/app/
-app/create-room/page.tsx    # From Electron/src/renderer/pages/CreateRoomPage.tsx
-app/join-room/page.tsx      # From Electron/src/renderer/pages/JoinRoomPage.tsx
 app/waiting-room/page.tsx   # From Electron/src/renderer/pages/WaitingRoomPage.tsx
 app/game/page.tsx           # From Electron/src/renderer/pages/GamePage.tsx
 ```
+
+**Note**: `create-room` and `join-room` pages have already been migrated and are included in this repository.
 
 **Important**: When copying, make sure to:
 
